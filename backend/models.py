@@ -1,0 +1,74 @@
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Text, text
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from datetime import datetime
+
+DATABASE_URL = "sqlite:///./war_alert.db"
+
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+
+class NewsItem(Base):
+    __tablename__ = "news_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(Text, nullable=False)
+    title_th = Column(Text)                             # Thai translation of title
+    description = Column(Text)
+    url = Column(String(500))
+    source = Column(String(200))
+    published_at = Column(DateTime)
+    category = Column(String(20), default="neutral")    # danger / peace / neutral
+    alert_message = Column(Text)
+    line_sent = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Setting(Base):
+    __tablename__ = "settings"
+
+    key = Column(String(100), primary_key=True)
+    value = Column(Text)
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def init_db():
+    Base.metadata.create_all(bind=engine)
+
+    # Migrate: add title_th column to existing tables (safe to run multiple times)
+    db = SessionLocal()
+    try:
+        db.execute(text("ALTER TABLE news_items ADD COLUMN title_th TEXT"))
+        db.commit()
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()
+
+    db = SessionLocal()
+    try:
+        defaults = {
+            "auto_fetch": "false",
+            "fetch_interval_value": "30",
+            "fetch_interval_unit": "minutes",
+            "keywords": "Iran attack,Israel strike,US military,war erupts,missile launch,ceasefire,peace talks,negotiation",
+            "danger_keywords": "attack,strike,missile,bomb,war,invasion,explosion,shoot,fire,killed,casualties",
+            "peace_keywords": "ceasefire,negotiation,peace talks,agreement,treaty,withdraw,diplomacy,truce",
+            "newsapi_enabled": "true",
+            "max_news_age_hours": "6",
+        }
+        for key, value in defaults.items():
+            if not db.query(Setting).filter(Setting.key == key).first():
+                db.add(Setting(key=key, value=value))
+        db.commit()
+    finally:
+        db.close()

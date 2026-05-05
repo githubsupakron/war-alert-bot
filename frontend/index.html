@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WAR ALERT BOT v2.1 — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080c10; --bg2:#0d1117; --bg3:#161b22; --border:#21262d;
+  --red:#f85149; --green:#3fb950; --yellow:#d29922; --blue:#58a6ff;
+  --purple:#bc8cff; --orange:#e3b341; --text:#c9d1d9; --dim:#6e7681;
+  --mono:'Share Tech Mono',monospace; --sans:'Sarabun',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:
+  linear-gradient(rgba(88,166,255,.025) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(88,166,255,.025) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:0 16px}
+
+/* ── Header ── */
+header{background:linear-gradient(180deg,rgba(13,17,23,.98) 0%,rgba(13,17,23,.8) 100%);
+  border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:0;z-index:100;
+  backdrop-filter:blur(12px)}
+.hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:36px;height:36px;background:var(--red);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  animation:pulse-icon 2s infinite;flex-shrink:0}
+@keyframes pulse-icon{0%,100%{box-shadow:0 0 12px rgba(248,81,73,.5)}50%{box-shadow:0 0 28px rgba(248,81,73,.8)}}
+.logo-text{font-family:var(--mono);font-size:16px;color:var(--red);letter-spacing:2px;line-height:1.2}
+.logo-sub{font-size:10px;color:var(--dim);letter-spacing:2px;font-family:var(--mono)}
+.hbadges{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.hbadge{display:flex;align-items:center;gap:5px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:20px;padding:4px 10px;font-family:var(--mono);font-size:11px}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot-g{background:var(--green);box-shadow:0 0 5px var(--green);animation:blink 1.5s infinite}
+.dot-y{background:var(--yellow)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ── Stats Row ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin:18px 0}
+.scard{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;
+  position:relative;overflow:hidden;transition:border-color .2s,transform .15s}
+.scard:hover{border-color:var(--ca,var(--blue));transform:translateY(-1px)}
+.scard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ca,var(--blue))}
+.slabel{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;
+  font-family:var(--mono);margin-bottom:5px}
+.sval{font-size:28px;font-weight:700;color:var(--ca,var(--blue));font-family:var(--mono);line-height:1}
+.ssub{font-size:11px;color:var(--dim);margin-top:4px}
+.sval-sm{font-size:15px;padding-top:5px}
+
+/* ── Main Grid ── */
+.mgrid{display:grid;grid-template-columns:330px 1fr;gap:14px;margin-bottom:40px}
+@media(max-width:900px){.mgrid{grid-template-columns:1fr}}
+
+/* ── Panel ── */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.ph{padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg3);
+  display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ptitle{font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  display:flex;align-items:center;gap:6px}
+.pb{padding:14px}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:6px;border:none;
+  cursor:pointer;font-size:13px;font-family:var(--sans);font-weight:600;transition:all .15s;
+  text-decoration:none;white-space:nowrap}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-blue{background:var(--blue);color:#000}
+.btn-blue:hover:not(:disabled){background:#79b8ff;transform:translateY(-1px)}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover:not(:disabled){background:#ff6e67}
+.btn-green{background:var(--green);color:#000}
+.btn-green:hover:not(:disabled){background:#56d364}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-ghost:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
+.btn-orange{background:var(--orange);color:#000}
+.btn-orange:hover:not(:disabled){background:#f0c04a}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-full{width:100%;justify-content:center}
+
+/* ── Form ── */
+.fg{margin-bottom:11px}
+.fg:last-child{margin-bottom:0}
+.fl{font-size:10px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;
+  margin-bottom:4px;display:block;font-family:var(--mono)}
+.fi,.fta,.fsel{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  color:var(--text);padding:7px 10px;font-size:13px;font-family:var(--mono);transition:border-color .2s}
+.fi:focus,.fta:focus,.fsel:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(88,166,255,.15)}
+.fta{height:68px;resize:vertical}
+.fsel option{background:var(--bg2)}
+.hint{font-size:11px;color:var(--dim);margin-top:3px}
+.divider{height:1px;background:var(--border);margin:12px 0}
+
+/* ── Toggle Row ── */
+.trow{display:flex;align-items:center;justify-content:space-between;padding:11px 0;
+  border-bottom:1px solid var(--border)}
+.trow:last-child{border-bottom:none}
+.tlabel{font-size:13px;font-weight:600}
+.tdesc{font-size:11px;color:var(--dim);margin-top:2px}
+.toggle{position:relative;width:42px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.tslider{position:absolute;inset:0;background:var(--bg3);border:1px solid var(--border);
+  border-radius:11px;cursor:pointer;transition:.25s}
+.tslider::before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;
+  background:var(--dim);border-radius:50%;transition:.25s}
+.toggle input:checked+.tslider{background:var(--green);border-color:var(--green)}
+.toggle input:checked+.tslider::before{transform:translateX(20px);background:#000}
+
+/* ── Interval row ── */
+.iv-row{display:flex;gap:7px;align-items:center;margin-top:7px}
+.iv-num{width:72px;text-align:center;flex-shrink:0}
+
+/* ── Date Range Panel ── */
+.drpanel{background:var(--bg);border:1px solid var(--border);border-radius:8px;
+  padding:11px;margin-top:9px;display:none}
+
+/* ── Badge ── */
+.badge{padding:2px 7px;border-radius:10px;font-size:10px;font-family:var(--mono);
+  font-weight:600;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+.b-danger{background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.3)}
+.b-peace{background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3)}
+.b-neutral{background:rgba(110,118,129,.15);color:var(--dim);border:1px solid var(--border)}
+.b-sent{background:rgba(88,166,255,.12);color:var(--blue);border:1px solid rgba(88,166,255,.25)}
+.b-trans{background:rgba(188,140,255,.12);color:var(--purple);border:1px solid rgba(188,140,255,.25)}
+
+/* ── Tabs ── */
+.tabs{display:flex;gap:5px;padding:9px 14px;border-bottom:1px solid var(--border);
+  background:var(--bg3);flex-wrap:wrap}
+.tab{padding:3px 11px;border-radius:20px;border:1px solid var(--border);background:transparent;
+  color:var(--dim);font-size:11px;cursor:pointer;font-family:var(--mono);transition:all .15s}
+.tab.active{background:var(--blue);color:#000;border-color:var(--blue)}
+.tab:hover:not(.active){border-color:var(--blue);color:var(--blue)}
+
+/* ── News List ── */
+.nlist{max-height:calc(100vh - 280px);min-height:400px;overflow-y:auto}
+.nlist::-webkit-scrollbar{width:4px}
+.nlist::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ── News Card ── */
+.ncard{padding:13px 14px;border-bottom:1px solid var(--border);position:relative;transition:background .12s}
+.ncard:hover{background:rgba(255,255,255,.025)}
+.ncard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.ncard.danger::before{background:var(--red)}
+.ncard.peace::before{background:var(--green)}
+.ncard.neutral::before{background:var(--border)}
+.nmeta{display:flex;align-items:center;gap:5px;margin-bottom:7px;flex-wrap:wrap}
+.nsrc{font-size:11px;color:var(--dim);font-family:var(--mono)}
+
+/* Title: TH prominent, EN smaller */
+.ntitle{font-size:14px;font-weight:700;line-height:1.4;margin-bottom:2px;color:var(--text)}
+.ntitle-en{font-size:11px;color:var(--dim);font-family:var(--mono);margin-bottom:6px;
+  line-height:1.4;padding-left:2px;border-left:2px solid var(--border);margin-left:2px;padding-left:6px}
+.ndesc{font-size:12px;color:var(--dim);line-height:1.55;margin-bottom:8px}
+
+/* LINE preview */
+.preview-toggle{font-size:11px;color:var(--blue);cursor:pointer;font-family:var(--mono);
+  background:none;border:none;padding:2px 0;display:inline-flex;align-items:center;gap:3px;
+  margin:4px 0 3px;transition:color .15s}
+.preview-toggle:hover{color:#79b8ff}
+.apreview{background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:10px 12px;font-family:var(--mono);font-size:11px;line-height:1.75;white-space:pre-wrap;
+  max-height:180px;overflow-y:auto;margin:4px 0 6px;color:var(--text);display:none}
+.apreview::-webkit-scrollbar{width:3px}
+.apreview::-webkit-scrollbar-thumb{background:var(--border)}
+
+.nfoot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px;margin-top:6px}
+.nact{display:flex;gap:4px;flex-wrap:wrap}
+
+/* ── Fetch animation ── */
+.fetch-wrap{position:relative;border-radius:8px}
+.fetch-wrap.loading::after{content:'';position:absolute;inset:-4px;border-radius:10px;
+  border:2px solid var(--blue);animation:radar 1.4s ease-out infinite}
+@keyframes radar{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(1.12)}}
+
+/* ── Empty / Loading ── */
+.empty{text-align:center;padding:52px 20px;color:var(--dim)}
+.empty .ei{font-size:40px;margin-bottom:12px;display:block}
+
+/* ── Spinner ── */
+.spin{width:13px;height:13px;border:2px solid var(--border);border-top-color:var(--blue);
+  border-radius:50%;animation:rot .6s linear infinite;display:inline-block;flex-shrink:0}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;padding:10px 16px;font-size:13px;z-index:9999;
+  transform:translateY(80px);opacity:0;transition:all .25s;max-width:340px;line-height:1.4}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.ok{border-left:3px solid var(--green)}
+#toast.err{border-left:3px solid var(--red)}
+#toast.info{border-left:3px solid var(--blue)}
+</style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────── -->
+<header>
+<div class="wrap">
+<div class="hdr">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div>
+      <div class="logo-text">WAR ALERT BOT</div>
+      <div class="logo-sub">Market Intelligence v2.1</div>
+    </div>
+  </div>
+  <div class="hbadges">
+    <div class="hbadge"><div class="dot dot-g"></div><span id="online-txt">ONLINE</span></div>
+    <div class="hbadge" id="auto-badge" style="display:none">
+      <div class="dot dot-g"></div><span id="auto-badge-txt">AUTO</span>
+    </div>
+    <div class="hbadge" id="last-badge" style="display:none">
+      <span style="color:var(--dim)">ล่าสุด</span>&nbsp;<span id="hdr-last-time">—</span>
+    </div>
+  </div>
+</div>
+</div>
+</header>
+
+<div class="wrap" style="padding-top:16px">
+
+<!-- ── Stats ── -->
+<div class="stats">
+  <div class="scard" style="--ca:var(--blue)">
+    <div class="slabel">📰 ข่าวทั้งหมด</div>
+    <div class="sval" id="s-total">—</div>
+    <div class="ssub">รายการ</div>
+  </div>
+  <div class="scard" style="--ca:var(--red)">
+    <div class="slabel">🚨 Danger</div>
+    <div class="sval" id="s-danger">—</div>
+    <div class="ssub">ข่าวอันตราย</div>
+  </div>
+  <div class="scard" style="--ca:var(--green)">
+    <div class="slabel">☮️ Peace</div>
+    <div class="sval" id="s-peace">—</div>
+    <div class="ssub">ข่าวสันติ</div>
+  </div>
+  <div class="scard" style="--ca:var(--purple)">
+    <div class="slabel">📱 ส่ง LINE แล้ว</div>
+    <div class="sval" id="s-sent">—</div>
+    <div class="ssub">แจ้งเตือน</div>
+  </div>
+  <div class="scard" style="--ca:var(--yellow)">
+    <div class="slabel">🕐 อัปเดตล่าสุด</div>
+    <div class="sval sval-sm" id="s-lastfetch">—</div>
+    <div class="ssub" id="s-mode">Manual mode</div>
+  </div>
+</div>
+
+<!-- ── Main Grid ── -->
+<div class="mgrid">
+
+<!-- LEFT: Control Panel -->
+<div style="display:flex;flex-direction:column;gap:12px">
+
+  <!-- Manual Search -->
+  <div class="panel">
+    <div class="ph">
+      <div class="ptitle">🔍 Manual Search</div>
+    </div>
+    <div class="pb">
+      <div class="trow" style="padding-top:0">
+        <div>
+          <div class="tlabel">ระบุช่วงวันที่</div>
+          <div class="tdesc">เลือก From / To datetime</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="use-daterange" onchange="toggleDateRange()">
+          <span class="tslider"></span>
+        </label>
+      </div>
+
+      <div class="drpanel" id="daterange-panel">
+        <div class="fg">
+          <label class="fl">📅 วันเริ่มต้น</label>
+          <input type="datetime-local" class="fi" id="from-dt">
+        </div>
+        <div class="fg">
+          <label class="fl">📅 วันสิ้นสุด</label>
+          <input type="datetime-local" class="fi" id="to-dt">
+        </div>
+        <div class="hint">⚠️ NewsAPI free: ย้อนหลังได้ไม่เกิน 30 วัน</div>
+      </div>
+
+      <div style="height:10px"></div>
+      <div class="fetch-wrap" id="fetch-wrap">
+        <button class="btn btn-blue btn-full" id="btn-fetch" onclick="manualFetch()">
+          🔍 ค้นหาข่าวตอนนี้
+        </button>
+      </div>
+      <div class="hint" id="last-fetch-txt" style="margin-top:6px">ยังไม่เคยดึงข่าว</div>
+    </div>
+  </div>
+
+  <!-- Auto Fetch -->
+  <div class="panel">
+    <div class="ph">
+      <div class="ptitle">⚙️ Auto Fetch</div>
+    </div>
+    <div class="pb">
+      <div class="trow" style="padding-top:0">
+        <div>
+          <div class="tlabel">เปิดใช้งาน Auto</div>
+          <div class="tdesc">ดึงข่าวอัตโนมัติตามรอบเวลา</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-auto">
+          <span class="tslider"></span>
+        </label>
+      </div>
+
+      <div style="margin-top:10px">
+        <label class="fl">ดึงข่าวทุกๆ</label>
+        <div class="iv-row">
+          <input type="number" class="fi iv-num" id="iv-value" min="1" value="30">
+          <select class="fsel" id="iv-unit">
+            <option value="seconds">วินาที</option>
+            <option value="minutes" selected>นาที</option>
+            <option value="hours">ชั่วโมง</option>
+            <option value="days">วัน</option>
+          </select>
+        </div>
+        <div class="hint" id="iv-hint">= ทุก 30 นาที</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn btn-green btn-full" onclick="saveScheduler()">
+          💾 บันทึกการตั้งค่า Auto
+        </button>
+        <button class="btn btn-ghost btn-full btn-sm" onclick="testLine()">
+          📱 ทดสอบส่ง LINE
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keywords -->
+  <div class="panel">
+    <div class="ph">
+      <div class="ptitle">🔑 Keywords</div>
+    </div>
+    <div class="pb">
+      <div class="fg">
+        <label class="fl">คำค้นหาข่าว (NewsAPI) — คั่น comma</label>
+        <textarea class="fta" id="kw-search" placeholder="Iran attack, war, strike..."></textarea>
+        <div class="hint">ส่งได้สูงสุด 5 คำไปยัง NewsAPI</div>
+      </div>
+      <div class="fg">
+        <label class="fl">🚨 Danger Keywords</label>
+        <textarea class="fta" id="kw-danger" placeholder="attack, missile, bomb..."></textarea>
+      </div>
+      <div class="fg">
+        <label class="fl">☮️ Peace Keywords</label>
+        <textarea class="fta" id="kw-peace" placeholder="ceasefire, peace talks..."></textarea>
+      </div>
+      <div class="fg">
+        <label class="fl">ข่าวย้อนหลัง (ชั่วโมง) — Auto mode</label>
+        <input type="number" class="fi" id="kw-hours" min="1" max="720" value="6">
+      </div>
+      <button class="btn btn-orange btn-full" onclick="saveKeywords()">
+        💾 บันทึก Keywords
+      </button>
+    </div>
+  </div>
+
+</div><!-- end LEFT -->
+
+<!-- RIGHT: News Feed -->
+<div class="panel" style="display:flex;flex-direction:column">
+  <div class="ph">
+    <div class="ptitle">📡 News Intelligence Feed
+      <span class="badge b-neutral" id="news-count-badge">0</span>
+    </div>
+    <div style="display:flex;gap:5px">
+      <button class="btn btn-ghost btn-sm" onclick="loadNews()" title="รีเฟรช">↻ Refresh</button>
+      <button class="btn btn-red btn-sm" onclick="deleteAll()">🗑 ลบทั้งหมด</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('all',this)">ทั้งหมด</button>
+    <button class="tab" onclick="setTab('danger',this)">🚨 Danger</button>
+    <button class="tab" onclick="setTab('peace',this)">☮️ Peace</button>
+    <button class="tab" onclick="setTab('neutral',this)">⚪ Neutral</button>
+    <button class="tab" onclick="setTab('sent',this)">📱 ส่งแล้ว</button>
+  </div>
+
+  <div class="nlist" id="news-list">
+    <div class="empty"><span class="ei">📡</span><p>กำลังโหลด...</p></div>
+  </div>
+</div>
+
+</div><!-- end mgrid -->
+</div><!-- end wrap -->
+
+<div id="toast"></div>
+
+<script>
+const API = '';
+let allNews = [], curTab = 'all';
+
+// ── Utilities ──────────────────────────────────────────────
+function esc(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function toast(msg, type = 'ok') {
+  const t = document.getElementById('toast');
+  clearTimeout(toastTimer);
+  t.className = `show ${type}`;
+  t.innerHTML = (type === 'ok' ? '✅ ' : type === 'err' ? '❌ ' : 'ℹ️ ') + msg;
+  toastTimer = setTimeout(() => t.className = '', 4000);
+}
+
+function unitShort(u) { return {seconds:'s',minutes:'m',hours:'h',days:'d'}[u] || 'm'; }
+function unitTH(u)    { return {seconds:'วินาที',minutes:'นาที',hours:'ชั่วโมง',days:'วัน'}[u] || 'นาที'; }
+
+function updateIvHint() {
+  const v = document.getElementById('iv-value').value;
+  const u = document.getElementById('iv-unit').value;
+  document.getElementById('iv-hint').textContent = `= ทุก ${v} ${unitTH(u)}`;
+}
+
+// ── Date Range ─────────────────────────────────────────────
+function toggleDateRange() {
+  const on = document.getElementById('use-daterange').checked;
+  const panel = document.getElementById('daterange-panel');
+  panel.style.display = on ? 'block' : 'none';
+  if (on) {
+    const now = new Date();
+    const ago = new Date(now - 7 * 86400000);
+    const toLocal = d => new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    document.getElementById('from-dt').value = toLocal(ago);
+    document.getElementById('to-dt').value = toLocal(now);
+  }
+}
+
+// ── LINE Preview toggle ─────────────────────────────────────
+function togglePreview(id) {
+  const box = document.getElementById(`prev-${id}`);
+  const btn = document.getElementById(`pbtn-${id}`);
+  if (!box) return;
+  const hidden = box.style.display === 'none';
+  box.style.display = hidden ? 'block' : 'none';
+  btn.textContent = hidden ? '📋 ซ่อน LINE Preview ▲' : '📋 ดู LINE Preview ▼';
+}
+
+// ── Load Status ─────────────────────────────────────────────
+async function loadStatus() {
+  try {
+    const d = await (await fetch(`${API}/api/status`)).json();
+
+    document.getElementById('s-total').textContent  = d.total_news  ?? '—';
+    document.getElementById('s-sent').textContent   = d.sent_news   ?? '—';
+    document.getElementById('s-danger').textContent = d.danger_count ?? '—';
+    document.getElementById('s-peace').textContent  = d.peace_count  ?? '—';
+
+    // Only update controls when not actively editing
+    if (document.activeElement.id !== 'toggle-auto') {
+      document.getElementById('toggle-auto').checked = d.auto_fetch;
+    }
+    if (document.activeElement.id !== 'iv-value') {
+      document.getElementById('iv-value').value = d.interval_value || 30;
+    }
+    if (document.activeElement.id !== 'iv-unit') {
+      document.getElementById('iv-unit').value = d.interval_unit || 'minutes';
+    }
+    updateIvHint();
+
+    // Auto badge
+    const badge = document.getElementById('auto-badge');
+    badge.style.display = d.auto_fetch ? 'flex' : 'none';
+    document.getElementById('auto-badge-txt').textContent =
+      `AUTO / ${d.interval_value}${unitShort(d.interval_unit)}`;
+
+    document.getElementById('s-mode').textContent = d.auto_fetch
+      ? `Auto ทุก ${d.interval_value} ${unitTH(d.interval_unit)}`
+      : 'Manual mode';
+
+    if (d.last_fetch) {
+      const dt = new Date(d.last_fetch + (d.last_fetch.endsWith('Z') ? '' : 'Z'));
+      const timeStr = dt.toLocaleString('th-TH', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      document.getElementById('s-lastfetch').textContent = timeStr;
+      document.getElementById('hdr-last-time').textContent = timeStr;
+      document.getElementById('last-badge').style.display = 'flex';
+      document.getElementById('last-fetch-txt').textContent =
+        'ล่าสุด: ' + dt.toLocaleString('th-TH');
+    }
+  } catch(e) { console.error('loadStatus:', e); }
+}
+
+// ── Load Settings ───────────────────────────────────────────
+async function loadSettings() {
+  try {
+    const d = await (await fetch(`${API}/api/settings`)).json();
+    document.getElementById('kw-search').value = d.keywords || '';
+    document.getElementById('kw-danger').value = d.danger_keywords || '';
+    document.getElementById('kw-peace').value  = d.peace_keywords || '';
+    document.getElementById('kw-hours').value  = d.max_news_age_hours || 6;
+  } catch(e) {}
+}
+
+// ── Save Scheduler ──────────────────────────────────────────
+async function saveScheduler() {
+  const auto = document.getElementById('toggle-auto').checked;
+  const val  = parseInt(document.getElementById('iv-value').value);
+  const unit = document.getElementById('iv-unit').value;
+  if (!val || val < 1) { toast('Interval ต้องมากกว่า 0', 'err'); return; }
+
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div> กำลังบันทึก...';
+
+  try {
+    const r = await fetch(`${API}/api/settings/scheduler`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({auto_fetch: auto, interval_value: val, interval_unit: unit}),
+    });
+    if (r.ok) {
+      toast(auto ? `เปิด Auto ทุก ${val} ${unitTH(unit)} ✅` : 'ปิด Auto Fetch แล้ว ✅');
+    } else {
+      toast('บันทึกไม่สำเร็จ — ' + r.status, 'err');
+    }
+    await loadStatus();
+  } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
+
+  btn.disabled = false;
+  btn.innerHTML = '💾 บันทึกการตั้งค่า Auto';
+}
+
+// ── Save Keywords ───────────────────────────────────────────
+async function saveKeywords() {
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div> กำลังบันทึก...';
+
+  try {
+    const r = await fetch(`${API}/api/settings/keywords`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        keywords: document.getElementById('kw-search').value,
+        danger_keywords: document.getElementById('kw-danger').value,
+        peace_keywords:  document.getElementById('kw-peace').value,
+        max_news_age_hours: parseInt(document.getElementById('kw-hours').value) || 6,
+      }),
+    });
+    r.ok ? toast('บันทึก Keywords สำเร็จ ✅') : toast('บันทึกไม่สำเร็จ', 'err');
+  } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
+
+  btn.disabled = false;
+  btn.innerHTML = '💾 บันทึก Keywords';
+}
+
+// ── Manual Fetch ────────────────────────────────────────────
+async function manualFetch() {
+  const btn  = document.getElementById('btn-fetch');
+  const wrap = document.getElementById('fetch-wrap');
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div> กำลังดึงข่าว + แปลภาษา...';
+  wrap.classList.add('loading');
+
+  const useRange = document.getElementById('use-daterange').checked;
+  let body = {};
+
+  if (useRange) {
+    const f = document.getElementById('from-dt').value;
+    const t = document.getElementById('to-dt').value;
+    if (!f || !t) {
+      toast('กรุณาระบุวันเริ่มต้นและสิ้นสุด', 'err');
+      btn.disabled = false;
+      btn.innerHTML = '🔍 ค้นหาข่าวตอนนี้';
+      wrap.classList.remove('loading');
+      return;
+    }
+    body = {
+      from_datetime: new Date(f).toISOString(),
+      to_datetime:   new Date(t).toISOString(),
+    };
+  }
+
+  try {
+    const r = await fetch(`${API}/api/news/fetch`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    if (r.ok) {
+      toast(`ดึงข่าว ${d.fetched} รายการ · ใหม่ ${d.new} · ส่ง LINE ${d.sent} รายการ`);
+    } else {
+      toast('เกิดข้อผิดพลาดในการดึงข่าว', 'err');
+    }
+    await Promise.all([loadNews(), loadStatus()]);
+  } catch(e) { toast('เกิดข้อผิดพลาด: ' + e.message, 'err'); }
+
+  btn.disabled = false;
+  btn.innerHTML = '🔍 ค้นหาข่าวตอนนี้';
+  wrap.classList.remove('loading');
+}
+
+// ── Test LINE ───────────────────────────────────────────────
+async function testLine() {
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div> กำลังส่ง...';
+
+  try {
+    const d = await (await fetch(`${API}/api/line/test`, {method:'POST'})).json();
+    d.success ? toast('📱 ส่ง LINE สำเร็จ!') : toast('ส่ง LINE ไม่สำเร็จ — ตรวจสอบ Token', 'err');
+  } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
+
+  btn.disabled = false;
+  btn.innerHTML = '📱 ทดสอบส่ง LINE';
+}
+
+// ── News ────────────────────────────────────────────────────
+async function loadNews() {
+  try {
+    allNews = await (await fetch(`${API}/api/news?limit=200`)).json();
+    renderNews();
+  } catch(e) {
+    document.getElementById('news-list').innerHTML =
+      '<div class="empty"><span class="ei">⚠️</span><p>เชื่อมต่อ API ไม่ได้</p></div>';
+  }
+}
+
+function setTab(tab, el) {
+  curTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderNews();
+}
+
+function renderNews() {
+  let list = allNews;
+  if      (curTab === 'danger')  list = allNews.filter(n => n.category === 'danger');
+  else if (curTab === 'peace')   list = allNews.filter(n => n.category === 'peace');
+  else if (curTab === 'neutral') list = allNews.filter(n => n.category === 'neutral');
+  else if (curTab === 'sent')    list = allNews.filter(n => n.line_sent);
+
+  const badge = document.getElementById('news-count-badge');
+  badge.textContent = list.length;
+  badge.className = `badge ${list.length ? 'b-blue' : 'b-neutral'}`;
+
+  const container = document.getElementById('news-list');
+
+  if (!list.length) {
+    container.innerHTML = '<div class="empty"><span class="ei">📭</span><p>ไม่มีข่าวในหมวดนี้</p></div>';
+    return;
+  }
+
+  container.innerHTML = list.map(n => {
+    const cat       = n.category || 'neutral';
+    const badgeCls  = cat === 'danger' ? 'b-danger' : cat === 'peace' ? 'b-peace' : 'b-neutral';
+    const catIcon   = cat === 'danger' ? '🚨' : cat === 'peace' ? '☮️' : '⚪';
+    const catLabel  = cat.toUpperCase();
+
+    // Bilingual title
+    const hasTH     = n.title_th && n.title_th !== n.title && n.title_th.trim() !== '';
+    const titleMain = esc(hasTH ? n.title_th : n.title);
+    const titleSub  = hasTH
+      ? `<div class="ntitle-en">🔤 ${esc(n.title)}</div>`
+      : '';
+
+    const descText  = n.description ? esc(n.description.slice(0, 160)) + (n.description.length > 160 ? '…' : '') : '';
+    const pub       = n.published_at ? new Date(n.published_at).toLocaleString('th-TH') : '';
+
+    const sentBadge  = n.line_sent ? '<span class="badge b-sent">📱 ส่งแล้ว</span>' : '';
+    const transBadge = hasTH ? '<span class="badge b-trans">🇹🇭 แปลแล้ว</span>' : '';
+
+    const previewBlock = n.alert_message ? `
+      <button class="preview-toggle" id="pbtn-${n.id}" onclick="togglePreview(${n.id})">📋 ดู LINE Preview ▼</button>
+      <div class="apreview" id="prev-${n.id}">${esc(n.alert_message)}</div>
+    ` : '';
+
+    const sendBtn = (!n.line_sent && n.alert_message)
+      ? `<button class="btn btn-blue btn-sm" onclick="sendLine(${n.id})">📱 ส่ง LINE</button>`
+      : '';
+
+    return `
+<div class="ncard ${cat}" id="nc-${n.id}">
+  <div class="nmeta">
+    <span class="badge ${badgeCls}">${catIcon} ${catLabel}</span>
+    ${sentBadge}${transBadge}
+    <span class="nsrc" style="margin-left:auto">${esc(n.source || '')}</span>
+  </div>
+  <div class="ntitle">${titleMain}</div>
+  ${titleSub}
+  ${descText ? `<div class="ndesc">${descText}</div>` : ''}
+  ${previewBlock}
+  <div class="nfoot">
+    <span class="nsrc">${pub}</span>
+    <div class="nact">
+      <a href="${esc(n.url)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">🔗 ลิงก์</a>
+      ${sendBtn}
+      <button class="btn btn-red btn-sm" onclick="delNews(${n.id})">🗑</button>
+    </div>
+  </div>
+</div>`;
+  }).join('');
+}
+
+async function sendLine(id) {
+  try {
+    const d = await (await fetch(`${API}/api/line/send/${id}`, {method:'POST'})).json();
+    d.success ? toast('📱 ส่ง LINE สำเร็จ!') : toast('ส่งไม่สำเร็จ — ตรวจสอบ Token', 'err');
+    await Promise.all([loadNews(), loadStatus()]);
+  } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
+}
+
+async function delNews(id) {
+  if (!confirm('ลบข่าวนี้?')) return;
+  try {
+    await fetch(`${API}/api/news/${id}`, {method:'DELETE'});
+    toast('ลบข่าวแล้ว');
+    allNews = allNews.filter(n => n.id !== id);
+    renderNews();
+    loadStatus();
+  } catch(e) {}
+}
+
+async function deleteAll() {
+  if (!confirm('⚠️ ลบข่าวทั้งหมดในฐานข้อมูล?')) return;
+  try {
+    await fetch(`${API}/api/news`, {method:'DELETE'});
+    toast('ลบทั้งหมดแล้ว');
+    allNews = [];
+    renderNews();
+    loadStatus();
+  } catch(e) {}
+}
+
+// ── Init ────────────────────────────────────────────────────
+document.getElementById('iv-value').addEventListener('input',  updateIvHint);
+document.getElementById('iv-unit').addEventListener('change',  updateIvHint);
+
+Promise.all([loadStatus(), loadSettings(), loadNews()]);
+setInterval(() => { loadStatus(); loadNews(); }, 30000);
+</script>
+</body>
+</html>

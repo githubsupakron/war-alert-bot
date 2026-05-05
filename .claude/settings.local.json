@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip3 --version)",
+      "Bash(pip3 install *)",
+      "Bash(pkill -f \"python main.py\")",
+      "Bash(lsof -ti:8000)",
+      "Bash(xargs kill -9)",
+      "Bash(lsof -i:8000)",
+      "Bash(chmod +x /Users/supakronoapfang/Documents/Hackathon/war-alert-bot/start.sh)"
+    ]
+  }
+}
