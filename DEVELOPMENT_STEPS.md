@@ -1,7 +1,7 @@
 # 📋 WAR ALERT BOT — Development Steps & Prompt History
 **สำหรับทีม และสำหรับ AI (Claude) จดจำสิ่งที่ทำไปแล้ว**
 **Last Updated:** 2026-05-05
-**Version:** 2.1 (Free tier — Bilingual TH/EN, Auto-translate)
+**Version:** 2.2 (Free tier — Bilingual TH/EN, Facebook Page Integration, Channel Toggles)
 
 ---
 
@@ -21,16 +21,17 @@
 ```
 war-alert-bot/
 ├── backend/
-│   ├── main.py              ✅ v2.1 — FastAPI + lifespan + translator integration
-│   ├── models.py            ✅ SQLite + title_th column + auto migration
+│   ├── main.py              ✅ v2.2 — FastAPI + lifespan + Facebook + channel toggles
+│   ├── models.py            ✅ SQLite + title_th + facebook_sent + auto migration
 │   ├── news_fetcher.py      ✅ ดึงข่าวจาก NewsAPI.org + date range
 │   ├── analyzer.py          ✅ v2.1 — Keyword matching + bilingual alert message
-│   ├── translator.py        ✅ NEW — Auto-translate EN→TH (Google Translate, ฟรี)
+│   ├── translator.py        ✅ Auto-translate EN→TH (Google Translate, ฟรี)
 │   ├── line_notifier.py     ✅ LINE Messaging API push/broadcast
+│   ├── facebook_notifier.py ✅ NEW — Facebook Page post (Graph API v19.0)
 │   └── requirements.txt     ✅ Python dependencies
 ├── frontend/
-│   └── index.html           ✅ v2.1 — Redesigned Admin Dashboard (bilingual news cards)
-├── .env                     ✅ Environment variables (สร้างจาก env.example)
+│   └── index.html           ✅ v2.2 — Calendar picker + channel toggles + FB panel
+├── .env                     ✅ Environment variables (รวม Facebook credentials แล้ว)
 ├── env.example              ✅ Template environment variables
 ├── venv/                    ✅ Python virtual environment (local)
 ├── start.sh                 ✅ Start script (local)
@@ -44,14 +45,18 @@ war-alert-bot/
 ## 🔑 Environment Variables ที่ต้องการ
 
 ```env
-NEWSAPI_KEY=xxx          # จาก newsapi.org (ฟรี)
-LINE_CHANNEL_ACCESS_TOKEN=xxx   # จาก LINE Developers Console
-LINE_USER_ID=xxx         # User ID ขึ้นต้นด้วย U
-ADMIN_SECRET=xxx         # รหัสผ่าน admin (ตั้งเองได้)
+NEWSAPI_KEY=xxx                  # จาก newsapi.org (ฟรี)
+LINE_CHANNEL_ACCESS_TOKEN=xxx    # จาก LINE Developers Console
+LINE_USER_ID=xxx                 # User ID ขึ้นต้นด้วย U
+FB_APP_ID=xxx                    # จาก Facebook Developer App (optional)
+FB_PAGE_ID=xxx                   # Facebook Page ID
+FB_PAGE_ACCESS_TOKEN=xxx         # Page Access Token จาก Graph API Explorer
+ADMIN_SECRET=xxx                 # รหัสผ่าน admin (ตั้งเองได้)
 PORT=8000
 ```
 
 > ⚠️ **ไม่ต้องการ ANTHROPIC_API_KEY แล้ว** (ตัดออกใน Prompt 5)
+> ⚠️ **Facebook credentials ถูก expose ใน chat** — ควร generate Page Access Token ใหม่จาก Graph API Explorer
 
 ---
 
@@ -163,20 +168,24 @@ PORT=8000
 [NewsAPI.org]
      ↓ (HTTP GET ทุก N นาที หรือกด manual)
 [FastAPI Backend]
-     ├── news_fetcher.py  → ดึงข่าว
-     ├── analyzer.py      → จับ keyword → danger/peace/neutral
-     ├── models.py        → บันทึก SQLite
-     └── line_notifier.py → ส่ง LINE Push Message
-          ↓
-[LINE Messaging API] → มือถือผู้ใช้
+     ├── news_fetcher.py      → ดึงข่าว + date range filter
+     ├── translator.py        → แปล EN→TH (Google Translate ฟรี)
+     ├── analyzer.py          → จับ keyword → danger/peace/neutral
+     ├── models.py            → บันทึก SQLite
+     ├── line_notifier.py     → ส่ง LINE Push Message
+     └── facebook_notifier.py → โพสต์ Facebook Page
+          ↓              ↓
+[LINE Messaging API]  [Facebook Graph API v19.0]
+     ↓                    ↓
+  มือถือผู้ใช้          Facebook Page feed
           ↑
 [Admin Dashboard (index.html)]
-     ├── เปิด/ปิด Auto Fetch
-     ├── ตั้ง Interval (นาที)
-     ├── กด Manual Fetch
-     ├── ดูข่าวทั้งหมด (filter: danger/peace/neutral/sent)
-     ├── ส่ง LINE เฉพาะข่าวที่เลือก
-     └── ทดสอบส่ง LINE
+     ├── เปิด/ปิด Auto Fetch + ตั้ง Interval (วินาที/นาที/ชั่วโมง/วัน)
+     ├── Manual Fetch พร้อม calendar date picker + preset chips
+     ├── เปิด/ปิด LINE และ Facebook alert channels แยกกัน
+     ├── ดูข่าวทั้งหมด (filter: danger/peace/neutral/sent/fb_sent)
+     ├── ส่ง LINE หรือโพสต์ Facebook เฉพาะข่าวที่เลือก
+     └── ทดสอบส่ง LINE และทดสอบโพสต์ Facebook
 ```
 
 ---
@@ -187,25 +196,30 @@ PORT=8000
 | Column | Type | หมายเหตุ |
 |--------|------|---------|
 | id | INTEGER PK | Auto |
-| title | TEXT | หัวข้อข่าว |
+| title | TEXT | หัวข้อข่าว (EN) |
+| title_th | TEXT | หัวข้อข่าวภาษาไทย (แปลอัตโนมัติ) |
 | description | TEXT | เนื้อหา (max 500 chars) |
 | url | TEXT | ลิงก์ต้นฉบับ |
 | source | TEXT | แหล่งข่าว |
 | published_at | DATETIME | เวลาเผยแพร่ |
 | category | TEXT | danger/peace/neutral |
-| alert_message | TEXT | ข้อความที่จะส่ง LINE |
-| line_sent | BOOLEAN | ส่งแล้วหรือยัง |
+| alert_message | TEXT | ข้อความที่จะส่ง LINE/Facebook |
+| line_sent | BOOLEAN | ส่ง LINE แล้วหรือยัง |
+| facebook_sent | BOOLEAN | โพสต์ Facebook แล้วหรือยัง |
 | created_at | DATETIME | เวลาบันทึก |
 
 ### Table: `settings`
 | Key | Default | หมายเหตุ |
 |-----|---------|---------|
 | auto_fetch | false | เปิด/ปิด auto |
-| fetch_interval | 30 | นาที |
+| fetch_interval_value | 30 | ตัวเลข interval |
+| fetch_interval_unit | minutes | หน่วย: seconds/minutes/hours/days |
 | keywords | "Iran attack,..." | คำค้นหา NewsAPI |
 | danger_keywords | "attack,strike,..." | keyword จำแนก danger |
 | peace_keywords | "ceasefire,..." | keyword จำแนก peace |
 | max_news_age_hours | 6 | ดึงข่าวย้อนหลังกี่ชม. |
+| line_enabled | true | เปิด/ปิด LINE alert channel |
+| facebook_enabled | false | เปิด/ปิด Facebook alert channel |
 
 ---
 
@@ -213,15 +227,19 @@ PORT=8000
 
 | Method | Path | หน้าที่ |
 |--------|------|--------|
-| GET | `/api/status` | สถานะระบบ |
-| GET | `/api/news` | ดูข่าวทั้งหมด |
-| POST | `/api/news/fetch` | Manual fetch |
+| GET | `/api/status` | สถานะระบบ (รวม fb_sent, line_enabled, facebook_enabled) |
+| GET | `/api/news` | ดูข่าวทั้งหมด (filter: danger/peace/neutral/sent/fb_sent) |
+| POST | `/api/news/fetch` | Manual fetch (รับ body {from_datetime, to_datetime}) |
 | DELETE | `/api/news/{id}` | ลบข่าว |
-| GET | `/api/settings` | ดู settings |
-| PUT | `/api/settings` | อัปเดต settings |
-| POST | `/api/settings/toggle-auto` | เปิด/ปิด auto |
-| POST | `/api/line/test` | ทดสอบ LINE |
+| DELETE | `/api/news` | ลบข่าวทั้งหมด |
+| GET | `/api/settings` | ดู settings ทั้งหมด |
+| PUT | `/api/settings/scheduler` | อัปเดต auto_fetch + interval |
+| PUT | `/api/settings/keywords` | อัปเดต keywords |
+| PUT | `/api/settings/channels` | เปิด/ปิด LINE และ Facebook channels |
+| POST | `/api/line/test` | ทดสอบส่ง LINE |
 | POST | `/api/line/send/{id}` | ส่ง LINE ข่าวนั้น |
+| POST | `/api/facebook/test` | ทดสอบโพสต์ Facebook |
+| POST | `/api/facebook/send/{id}` | โพสต์ Facebook ข่าวนั้น |
 | GET | `/` | Admin Dashboard |
 
 ---
@@ -331,6 +349,8 @@ python main.py
 |--------|-----|-----------|---------|
 | NewsAPI | newsapi.org/register | ฟรี | 100 req/วัน, ข่าวหน่วง 15 นาที |
 | LINE Messaging API | developers.line.biz | ฟรี | 200 push msg/เดือน |
+| Facebook Graph API | developers.facebook.com | ฟรี | ต้องมี Facebook Page + App |
+| Google Translate | (unofficial, ไม่ต้องสมัคร) | ฟรี | ใช้ gtx client endpoint |
 | Railway.app | railway.app | ฟรี | Hobby plan มี limit |
 
 ---
@@ -374,11 +394,13 @@ python main.py
 
 ## 📌 Checklist ก่อน Go Live
 
-- [ ] Reissue LINE Channel Access Token ใหม่
+- [ ] Reissue LINE Channel Access Token ใหม่ (token เดิมถูก expose ใน chat)
+- [ ] Generate Facebook Page Access Token ใหม่ (token เดิมถูก expose ใน chat)
 - [ ] สมัคร NewsAPI และใส่ key ใน .env
 - [ ] ทดสอบ "ทดสอบส่ง LINE" จาก Admin Dashboard
+- [ ] ทดสอบ "ทดสอบโพสต์ Facebook" จาก Admin Dashboard
 - [ ] ทดสอบ "ค้นหาข่าวตอนนี้" และดูว่าข่าวขึ้น
-- [ ] ตรวจสอบว่าข่าว danger/peace ส่ง LINE ถูกต้อง
+- [ ] ตรวจสอบว่าข่าว danger/peace ส่ง LINE + โพสต์ Facebook ถูกต้อง
 - [ ] Deploy บน Railway และทดสอบ URL จริง
 - [ ] ตั้ง UptimeRobot ping URL ทุก 5 นาที (ป้องกัน sleep)
 
@@ -434,6 +456,64 @@ python main.py
 source venv/bin/activate && cd backend && python main.py
 ```
 เปิด http://localhost:8000
+
+---
+
+### 🟦 Prompt 9 — Facebook Integration + Calendar Picker + Channel Toggles
+**ผู้ใช้ต้องการ:**
+1. เปลี่ยน date range input จากพิมพ์ตัวเลขเป็น calendar date picker
+2. ปุ่มเปิด/ปิดสำหรับ LINE alert และ Facebook alert แยกกัน
+3. เพิ่มการโพสต์ Facebook Page โดยใช้ credentials ที่ให้มา
+
+**การเปลี่ยนแปลง:**
+
+`backend/facebook_notifier.py` (ไฟล์ใหม่):
+- POST ไปที่ `https://graph.facebook.com/v19.0/{page_id}/feed`
+- ส่ง `message`, `access_token` (form-encoded), และ optional `link` (สร้าง link preview card)
+- อ่าน `FB_PAGE_ID` + `FB_PAGE_ACCESS_TOKEN` จาก environment variables
+
+`backend/models.py` (v2.2):
+- เพิ่ม `facebook_sent = Column(Boolean, default=False)` ใน `NewsItem`
+- เพิ่ม migration: `ALTER TABLE news_items ADD COLUMN facebook_sent BOOLEAN DEFAULT 0`
+- เพิ่ม helper `_migrate_column()` — รัน ALTER TABLE อย่างปลอดภัย (ไม่ error ถ้า column มีอยู่แล้ว)
+- เพิ่ม default settings: `line_enabled: "true"`, `facebook_enabled: "false"`
+
+`backend/main.py` (v2.2):
+- Import `facebook_notifier.post_to_facebook_page`
+- เพิ่ม Pydantic model `ChannelSettings {line_enabled, facebook_enabled}`
+- `build_fb_message()` — append hashtags `#WarAlertBot #ทองคำ #หุ้น #ข่าวสงคราม #GoldAlert`
+- `process_and_notify()` — เช็ค `line_enabled`/`facebook_enabled` settings ก่อนส่ง
+- `/api/status` — เพิ่ม `fb_sent`, `line_enabled`, `facebook_enabled`
+- `/api/news` — เพิ่ม `facebook_sent` ในแต่ละ record
+- endpoints ใหม่: `PUT /api/settings/channels`, `POST /api/facebook/test`, `POST /api/facebook/send/{id}`
+- Version: 2.2.0
+
+`.env`:
+- เพิ่ม `FB_APP_ID`, `FB_PAGE_ID`, `FB_PAGE_ACCESS_TOKEN`
+
+`frontend/index.html` (v2.2):
+- **Date picker**: เปลี่ยน `datetime-local` → `type="date"` (calendar popup native)
+  - เพิ่ม preset chips: วันนี้ / เมื่อวาน / 7 วัน / 30 วัน
+  - JS แปลง YYYY-MM-DD → `T00:00:00` / `T23:59:59` ก่อนส่ง API
+  - ใช้ `color-scheme:dark` ใน CSS เพื่อให้ calendar popup เป็น dark theme
+- **Alert Channels panel**: "📢 Alert Channels" มี LINE toggle (สีเขียว) + Facebook toggle (สีน้ำเงิน #1877f2)
+  - บันทึกไปที่ `PUT /api/settings/channels` ผ่าน `saveChannels()`
+- **Channel status bar**: แสดง LINE ON/OFF + FB ON/OFF ระหว่าง tabs และ news feed
+- **Stats**: 6 cards รวม "📘 Facebook โพสต์" (fb_sent count)
+- **Header badges**: LINE ON / FB ON (แสดงเมื่อเปิดอยู่)
+- **News cards**: badge `FB` + ปุ่ม "📘 FB" สำหรับโพสต์ Facebook เฉพาะข่าวนั้น
+- **Tab ใหม่**: "📘 FB โพสต์" filter ข่าวที่โพสต์ Facebook แล้ว
+- **JS functions ใหม่**: `saveChannels()`, `testFacebook()`, `postFacebook(id)`, `setPreset(preset)`, `updateChannelBar(lineOn, fbOn)`
+
+**ไฟล์ที่เปลี่ยน:**
+- `backend/facebook_notifier.py` → ใหม่
+- `backend/models.py` → facebook_sent + migration + channel settings defaults
+- `backend/main.py` → v2.2, Facebook endpoints + channel toggle
+- `frontend/index.html` → v2.2, calendar picker + channel toggles + FB panel
+- `.env` → เพิ่ม Facebook credentials
+- `DEVELOPMENT_STEPS.md` → อัปเดตเป็น v2.2
+
+> ⚠️ **Security**: FB_PAGE_ACCESS_TOKEN ถูก expose ใน chat — ควร generate ใหม่จาก [Graph API Explorer](https://developers.facebook.com/tools/explorer/)
 
 ---
 

@@ -13,23 +13,24 @@ Base = declarative_base()
 class NewsItem(Base):
     __tablename__ = "news_items"
 
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(Text, nullable=False)
-    title_th = Column(Text)                             # Thai translation of title
-    description = Column(Text)
-    url = Column(String(500))
-    source = Column(String(200))
-    published_at = Column(DateTime)
-    category = Column(String(20), default="neutral")    # danger / peace / neutral
+    id            = Column(Integer, primary_key=True, index=True)
+    title         = Column(Text, nullable=False)
+    title_th      = Column(Text)                          # Thai translation
+    description   = Column(Text)
+    url           = Column(String(500))
+    source        = Column(String(200))
+    published_at  = Column(DateTime)
+    category      = Column(String(20), default="neutral") # danger / peace / neutral
     alert_message = Column(Text)
-    line_sent = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    line_sent     = Column(Boolean, default=False)
+    facebook_sent = Column(Boolean, default=False)        # Facebook page post
+    created_at    = Column(DateTime, default=datetime.utcnow)
 
 
 class Setting(Base):
     __tablename__ = "settings"
 
-    key = Column(String(100), primary_key=True)
+    key   = Column(String(100), primary_key=True)
     value = Column(Text)
 
 
@@ -41,30 +42,40 @@ def get_db():
         db.close()
 
 
-def init_db():
-    Base.metadata.create_all(bind=engine)
-
-    # Migrate: add title_th column to existing tables (safe to run multiple times)
-    db = SessionLocal()
+def _migrate_column(db, sql: str):
+    """Run an ALTER TABLE safely — ignore if column already exists."""
     try:
-        db.execute(text("ALTER TABLE news_items ADD COLUMN title_th TEXT"))
+        db.execute(text(sql))
         db.commit()
     except Exception:
         db.rollback()
+
+
+def init_db():
+    Base.metadata.create_all(bind=engine)
+
+    # Safe migrations for new columns
+    db = SessionLocal()
+    try:
+        _migrate_column(db, "ALTER TABLE news_items ADD COLUMN title_th TEXT")
+        _migrate_column(db, "ALTER TABLE news_items ADD COLUMN facebook_sent BOOLEAN DEFAULT 0")
     finally:
         db.close()
 
+    # Default settings
     db = SessionLocal()
     try:
         defaults = {
-            "auto_fetch": "false",
-            "fetch_interval_value": "30",
-            "fetch_interval_unit": "minutes",
-            "keywords": "Iran attack,Israel strike,US military,war erupts,missile launch,ceasefire,peace talks,negotiation",
-            "danger_keywords": "attack,strike,missile,bomb,war,invasion,explosion,shoot,fire,killed,casualties",
-            "peace_keywords": "ceasefire,negotiation,peace talks,agreement,treaty,withdraw,diplomacy,truce",
-            "newsapi_enabled": "true",
-            "max_news_age_hours": "6",
+            "auto_fetch":            "false",
+            "fetch_interval_value":  "30",
+            "fetch_interval_unit":   "minutes",
+            "keywords":              "Iran attack,Israel strike,US military,war erupts,missile launch,ceasefire,peace talks,negotiation",
+            "danger_keywords":       "attack,strike,missile,bomb,war,invasion,explosion,shoot,fire,killed,casualties",
+            "peace_keywords":        "ceasefire,negotiation,peace talks,agreement,treaty,withdraw,diplomacy,truce",
+            "max_news_age_hours":    "6",
+            # Alert channels (LINE on by default, Facebook off until configured)
+            "line_enabled":          "true",
+            "facebook_enabled":      "false",
         }
         for key, value in defaults.items():
             if not db.query(Setting).filter(Setting.key == key).first():

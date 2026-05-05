@@ -3,20 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WAR ALERT BOT v2.1 — Admin</title>
+<title>WAR ALERT BOT v2.2 — Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg:#080c10; --bg2:#0d1117; --bg3:#161b22; --border:#21262d;
   --red:#f85149; --green:#3fb950; --yellow:#d29922; --blue:#58a6ff;
-  --purple:#bc8cff; --orange:#e3b341; --text:#c9d1d9; --dim:#6e7681;
+  --purple:#bc8cff; --orange:#e3b341; --fb:#1877f2; --text:#c9d1d9; --dim:#6e7681;
   --mono:'Share Tech Mono',monospace; --sans:'Sarabun',sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
-body::before{content:'';position:fixed;inset:0;background-image:
-  linear-gradient(rgba(88,166,255,.025) 1px,transparent 1px),
-  linear-gradient(90deg,rgba(88,166,255,.025) 1px,transparent 1px);
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(88,166,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(88,166,255,.025) 1px,transparent 1px);
   background-size:40px 40px;pointer-events:none;z-index:0}
 .wrap{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:0 16px}
 
@@ -27,30 +27,31 @@ header{background:linear-gradient(180deg,rgba(13,17,23,.98) 0%,rgba(13,17,23,.8)
 .hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .logo{display:flex;align-items:center;gap:10px}
 .logo-icon{width:36px;height:36px;background:var(--red);border-radius:8px;
-  display:flex;align-items:center;justify-content:center;font-size:18px;
-  animation:pulse-icon 2s infinite;flex-shrink:0}
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;
+  animation:pulse-icon 2s infinite}
 @keyframes pulse-icon{0%,100%{box-shadow:0 0 12px rgba(248,81,73,.5)}50%{box-shadow:0 0 28px rgba(248,81,73,.8)}}
-.logo-text{font-family:var(--mono);font-size:16px;color:var(--red);letter-spacing:2px;line-height:1.2}
+.logo-text{font-family:var(--mono);font-size:16px;color:var(--red);letter-spacing:2px}
 .logo-sub{font-size:10px;color:var(--dim);letter-spacing:2px;font-family:var(--mono)}
 .hbadges{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .hbadge{display:flex;align-items:center;gap:5px;background:var(--bg3);border:1px solid var(--border);
   border-radius:20px;padding:4px 10px;font-family:var(--mono);font-size:11px}
 .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .dot-g{background:var(--green);box-shadow:0 0 5px var(--green);animation:blink 1.5s infinite}
+.dot-b{background:var(--fb)}
 .dot-y{background:var(--yellow)}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 
-/* ── Stats Row ── */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin:18px 0}
-.scard{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;
-  position:relative;overflow:hidden;transition:border-color .2s,transform .15s}
+/* ── Stats ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px;margin:16px 0}
+.scard{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px 15px;
+  position:relative;overflow:hidden;transition:border-color .2s,transform .15s;cursor:default}
 .scard:hover{border-color:var(--ca,var(--blue));transform:translateY(-1px)}
 .scard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ca,var(--blue))}
 .slabel{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;
   font-family:var(--mono);margin-bottom:5px}
-.sval{font-size:28px;font-weight:700;color:var(--ca,var(--blue));font-family:var(--mono);line-height:1}
+.sval{font-size:26px;font-weight:700;color:var(--ca,var(--blue));font-family:var(--mono);line-height:1}
+.sval-sm{font-size:14px;padding-top:6px}
 .ssub{font-size:11px;color:var(--dim);margin-top:4px}
-.sval-sm{font-size:15px;padding-top:5px}
 
 /* ── Main Grid ── */
 .mgrid{display:grid;grid-template-columns:330px 1fr;gap:14px;margin-bottom:40px}
@@ -79,8 +80,11 @@ header{background:linear-gradient(180deg,rgba(13,17,23,.98) 0%,rgba(13,17,23,.8)
 .btn-ghost:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
 .btn-orange{background:var(--orange);color:#000}
 .btn-orange:hover:not(:disabled){background:#f0c04a}
+.btn-fb{background:var(--fb);color:#fff}
+.btn-fb:hover:not(:disabled){background:#3390ff}
 .btn-sm{padding:4px 10px;font-size:12px}
 .btn-full{width:100%;justify-content:center}
+.btn-half{flex:1;justify-content:center}
 
 /* ── Form ── */
 .fg{margin-bottom:11px}
@@ -89,11 +93,14 @@ header{background:linear-gradient(180deg,rgba(13,17,23,.98) 0%,rgba(13,17,23,.8)
   margin-bottom:4px;display:block;font-family:var(--mono)}
 .fi,.fta,.fsel{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;
   color:var(--text);padding:7px 10px;font-size:13px;font-family:var(--mono);transition:border-color .2s}
-.fi:focus,.fta:focus,.fsel:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(88,166,255,.15)}
-.fta{height:68px;resize:vertical}
+.fi:focus,.fta:focus,.fsel:focus{outline:none;border-color:var(--blue);
+  box-shadow:0 0 0 2px rgba(88,166,255,.12)}
+.fta{height:66px;resize:vertical}
+/* Date/time input dark calendar fix */
+.fi[type=date],.fi[type=time]{color-scheme:dark}
 .fsel option{background:var(--bg2)}
 .hint{font-size:11px;color:var(--dim);margin-top:3px}
-.divider{height:1px;background:var(--border);margin:12px 0}
+.divider{height:1px;background:var(--border);margin:11px 0}
 
 /* ── Toggle Row ── */
 .trow{display:flex;align-items:center;justify-content:space-between;padding:11px 0;
@@ -109,12 +116,21 @@ header{background:linear-gradient(180deg,rgba(13,17,23,.98) 0%,rgba(13,17,23,.8)
   background:var(--dim);border-radius:50%;transition:.25s}
 .toggle input:checked+.tslider{background:var(--green);border-color:var(--green)}
 .toggle input:checked+.tslider::before{transform:translateX(20px);background:#000}
+/* Facebook channel toggle — blue when on */
+.toggle-fb input:checked+.tslider{background:var(--fb);border-color:var(--fb)}
 
 /* ── Interval row ── */
 .iv-row{display:flex;gap:7px;align-items:center;margin-top:7px}
 .iv-num{width:72px;text-align:center;flex-shrink:0}
 
-/* ── Date Range Panel ── */
+/* ── Date preset chips ── */
+.presets{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px}
+.preset-chip{padding:3px 10px;border-radius:20px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--dim);font-size:11px;cursor:pointer;
+  font-family:var(--mono);transition:all .15s}
+.preset-chip:hover{border-color:var(--blue);color:var(--blue)}
+
+/* ── Date range panel ── */
 .drpanel{background:var(--bg);border:1px solid var(--border);border-radius:8px;
   padding:11px;margin-top:9px;display:none}
 
@@ -125,6 +141,7 @@ header{background:linear-gradient(180deg,rgba(13,17,23,.98) 0%,rgba(13,17,23,.8)
 .b-peace{background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3)}
 .b-neutral{background:rgba(110,118,129,.15);color:var(--dim);border:1px solid var(--border)}
 .b-sent{background:rgba(88,166,255,.12);color:var(--blue);border:1px solid rgba(88,166,255,.25)}
+.b-fb{background:rgba(24,119,242,.15);color:var(--fb);border:1px solid rgba(24,119,242,.3)}
 .b-trans{background:rgba(188,140,255,.12);color:var(--purple);border:1px solid rgba(188,140,255,.25)}
 
 /* ── Tabs ── */
@@ -149,26 +166,29 @@ header{background:linear-gradient(180deg,rgba(13,17,23,.98) 0%,rgba(13,17,23,.8)
 .ncard.neutral::before{background:var(--border)}
 .nmeta{display:flex;align-items:center;gap:5px;margin-bottom:7px;flex-wrap:wrap}
 .nsrc{font-size:11px;color:var(--dim);font-family:var(--mono)}
-
-/* Title: TH prominent, EN smaller */
 .ntitle{font-size:14px;font-weight:700;line-height:1.4;margin-bottom:2px;color:var(--text)}
 .ntitle-en{font-size:11px;color:var(--dim);font-family:var(--mono);margin-bottom:6px;
-  line-height:1.4;padding-left:2px;border-left:2px solid var(--border);margin-left:2px;padding-left:6px}
+  line-height:1.4;border-left:2px solid var(--border);margin-left:2px;padding-left:6px}
 .ndesc{font-size:12px;color:var(--dim);line-height:1.55;margin-bottom:8px}
-
-/* LINE preview */
 .preview-toggle{font-size:11px;color:var(--blue);cursor:pointer;font-family:var(--mono);
   background:none;border:none;padding:2px 0;display:inline-flex;align-items:center;gap:3px;
-  margin:4px 0 3px;transition:color .15s}
+  margin:3px 0;transition:color .15s}
 .preview-toggle:hover{color:#79b8ff}
 .apreview{background:var(--bg);border:1px solid var(--border);border-radius:6px;
   padding:10px 12px;font-family:var(--mono);font-size:11px;line-height:1.75;white-space:pre-wrap;
   max-height:180px;overflow-y:auto;margin:4px 0 6px;color:var(--text);display:none}
 .apreview::-webkit-scrollbar{width:3px}
 .apreview::-webkit-scrollbar-thumb{background:var(--border)}
-
 .nfoot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px;margin-top:6px}
 .nact{display:flex;gap:4px;flex-wrap:wrap}
+
+/* ── Channel status row ── */
+.ch-status{display:flex;gap:6px;padding:8px 14px;background:var(--bg3);border-bottom:1px solid var(--border);
+  font-size:11px;font-family:var(--mono);flex-wrap:wrap;align-items:center}
+.ch-badge{display:flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;border:1px solid var(--border)}
+.ch-badge.on-line{border-color:rgba(63,185,80,.4);color:var(--green)}
+.ch-badge.off{color:var(--dim)}
+.ch-badge.on-fb{border-color:rgba(24,119,242,.4);color:var(--fb)}
 
 /* ── Fetch animation ── */
 .fetch-wrap{position:relative;border-radius:8px}
@@ -188,7 +208,7 @@ header{background:linear-gradient(180deg,rgba(13,17,23,.98) 0%,rgba(13,17,23,.8)
 /* ── Toast ── */
 #toast{position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid var(--border);
   border-radius:8px;padding:10px 16px;font-size:13px;z-index:9999;
-  transform:translateY(80px);opacity:0;transition:all .25s;max-width:340px;line-height:1.4}
+  transform:translateY(80px);opacity:0;transition:all .25s;max-width:360px;line-height:1.4}
 #toast.show{transform:translateY(0);opacity:1}
 #toast.ok{border-left:3px solid var(--green)}
 #toast.err{border-left:3px solid var(--red)}
@@ -197,7 +217,7 @@ header{background:linear-gradient(180deg,rgba(13,17,23,.98) 0%,rgba(13,17,23,.8)
 </head>
 <body>
 
-<!-- ── Header ──────────────────────────────────────────────── -->
+<!-- ── Header ────────────────────────────────────────────── -->
 <header>
 <div class="wrap">
 <div class="hdr">
@@ -205,13 +225,19 @@ header{background:linear-gradient(180deg,rgba(13,17,23,.98) 0%,rgba(13,17,23,.8)
     <div class="logo-icon">⚡</div>
     <div>
       <div class="logo-text">WAR ALERT BOT</div>
-      <div class="logo-sub">Market Intelligence v2.1</div>
+      <div class="logo-sub">Market Intelligence v2.2</div>
     </div>
   </div>
   <div class="hbadges">
-    <div class="hbadge"><div class="dot dot-g"></div><span id="online-txt">ONLINE</span></div>
+    <div class="hbadge"><div class="dot dot-g"></div><span>ONLINE</span></div>
     <div class="hbadge" id="auto-badge" style="display:none">
       <div class="dot dot-g"></div><span id="auto-badge-txt">AUTO</span>
+    </div>
+    <div class="hbadge" id="line-ch-badge" style="display:none">
+      <div class="dot dot-g"></div><span>LINE ON</span>
+    </div>
+    <div class="hbadge" id="fb-ch-badge" style="display:none">
+      <div class="dot dot-b"></div><span>FB ON</span>
     </div>
     <div class="hbadge" id="last-badge" style="display:none">
       <span style="color:var(--dim)">ล่าสุด</span>&nbsp;<span id="hdr-last-time">—</span>
@@ -227,23 +253,23 @@ header{background:linear-gradient(180deg,rgba(13,17,23,.98) 0%,rgba(13,17,23,.8)
 <div class="stats">
   <div class="scard" style="--ca:var(--blue)">
     <div class="slabel">📰 ข่าวทั้งหมด</div>
-    <div class="sval" id="s-total">—</div>
-    <div class="ssub">รายการ</div>
+    <div class="sval" id="s-total">—</div><div class="ssub">รายการ</div>
   </div>
   <div class="scard" style="--ca:var(--red)">
     <div class="slabel">🚨 Danger</div>
-    <div class="sval" id="s-danger">—</div>
-    <div class="ssub">ข่าวอันตราย</div>
+    <div class="sval" id="s-danger">—</div><div class="ssub">ข่าวอันตราย</div>
   </div>
   <div class="scard" style="--ca:var(--green)">
     <div class="slabel">☮️ Peace</div>
-    <div class="sval" id="s-peace">—</div>
-    <div class="ssub">ข่าวสันติ</div>
+    <div class="sval" id="s-peace">—</div><div class="ssub">ข่าวสันติ</div>
   </div>
   <div class="scard" style="--ca:var(--purple)">
-    <div class="slabel">📱 ส่ง LINE แล้ว</div>
-    <div class="sval" id="s-sent">—</div>
-    <div class="ssub">แจ้งเตือน</div>
+    <div class="slabel">📱 LINE ส่งแล้ว</div>
+    <div class="sval" id="s-sent">—</div><div class="ssub">แจ้งเตือน</div>
+  </div>
+  <div class="scard" style="--ca:var(--fb)">
+    <div class="slabel">📘 Facebook โพสต์</div>
+    <div class="sval" id="s-fbsent">—</div><div class="ssub">โพสต์แล้ว</div>
   </div>
   <div class="scard" style="--ca:var(--yellow)">
     <div class="slabel">🕐 อัปเดตล่าสุด</div>
@@ -260,14 +286,13 @@ header{background:linear-gradient(180deg,rgba(13,17,23,.98) 0%,rgba(13,17,23,.8)
 
   <!-- Manual Search -->
   <div class="panel">
-    <div class="ph">
-      <div class="ptitle">🔍 Manual Search</div>
-    </div>
+    <div class="ph"><div class="ptitle">🔍 Manual Search</div></div>
     <div class="pb">
+
       <div class="trow" style="padding-top:0">
         <div>
           <div class="tlabel">ระบุช่วงวันที่</div>
-          <div class="tdesc">เลือก From / To datetime</div>
+          <div class="tdesc">เปิดเพื่อเลือกวันจากปฏิทิน</div>
         </div>
         <label class="toggle">
           <input type="checkbox" id="use-daterange" onchange="toggleDateRange()">
@@ -275,14 +300,32 @@ header{background:linear-gradient(180deg,rgba(13,17,23,.98) 0%,rgba(13,17,23,.8)
         </label>
       </div>
 
+      <!-- Date Range (hidden by default) -->
       <div class="drpanel" id="daterange-panel">
+        <!-- Quick preset chips -->
+        <div style="margin-bottom:8px">
+          <label class="fl">⚡ เลือกด่วน</label>
+          <div class="presets">
+            <button class="preset-chip" onclick="setPreset('today')">วันนี้</button>
+            <button class="preset-chip" onclick="setPreset('yesterday')">เมื่อวาน</button>
+            <button class="preset-chip" onclick="setPreset('7d')">7 วัน</button>
+            <button class="preset-chip" onclick="setPreset('30d')">30 วัน</button>
+          </div>
+        </div>
+        <!-- Calendar + time inputs -->
         <div class="fg">
-          <label class="fl">📅 วันเริ่มต้น</label>
-          <input type="datetime-local" class="fi" id="from-dt">
+          <label class="fl">📅 วันเริ่มต้น (From)</label>
+          <div style="display:flex;gap:6px">
+            <input type="date" class="fi" id="from-dt" style="flex:1">
+            <input type="time" class="fi" id="from-tm" value="00:00" style="width:96px">
+          </div>
         </div>
         <div class="fg">
-          <label class="fl">📅 วันสิ้นสุด</label>
-          <input type="datetime-local" class="fi" id="to-dt">
+          <label class="fl">📅 วันสิ้นสุด (To)</label>
+          <div style="display:flex;gap:6px">
+            <input type="date" class="fi" id="to-dt" style="flex:1">
+            <input type="time" class="fi" id="to-tm" value="23:59" style="width:96px">
+          </div>
         </div>
         <div class="hint">⚠️ NewsAPI free: ย้อนหลังได้ไม่เกิน 30 วัน</div>
       </div>
@@ -297,11 +340,48 @@ header{background:linear-gradient(180deg,rgba(13,17,23,.98) 0%,rgba(13,17,23,.8)
     </div>
   </div>
 
+  <!-- Alert Channels -->
+  <div class="panel">
+    <div class="ph"><div class="ptitle">📢 Alert Channels</div></div>
+    <div class="pb">
+
+      <div class="trow" style="padding-top:0">
+        <div>
+          <div class="tlabel">📱 LINE Alert</div>
+          <div class="tdesc">ส่งแจ้งเตือนผ่าน LINE Messaging API</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-line" checked>
+          <span class="tslider"></span>
+        </label>
+      </div>
+
+      <div class="trow">
+        <div>
+          <div class="tlabel">📘 Facebook Alert</div>
+          <div class="tdesc">โพสต์ไปยัง Facebook Page อัตโนมัติ</div>
+        </div>
+        <label class="toggle toggle-fb">
+          <input type="checkbox" id="toggle-fb">
+          <span class="tslider"></span>
+        </label>
+      </div>
+
+      <div class="divider"></div>
+
+      <button class="btn btn-green btn-full" onclick="saveChannels()">
+        💾 บันทึก Channel Settings
+      </button>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="btn btn-ghost btn-half btn-sm" onclick="testLine()">📱 Test LINE</button>
+        <button class="btn btn-fb btn-half btn-sm" onclick="testFacebook()">📘 Test FB</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Auto Fetch -->
   <div class="panel">
-    <div class="ph">
-      <div class="ptitle">⚙️ Auto Fetch</div>
-    </div>
+    <div class="ph"><div class="ptitle">⚙️ Auto Fetch</div></div>
     <div class="pb">
       <div class="trow" style="padding-top:0">
         <div>
@@ -329,28 +409,20 @@ header{background:linear-gradient(180deg,rgba(13,17,23,.98) 0%,rgba(13,17,23,.8)
       </div>
 
       <div class="divider"></div>
-
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <button class="btn btn-green btn-full" onclick="saveScheduler()">
-          💾 บันทึกการตั้งค่า Auto
-        </button>
-        <button class="btn btn-ghost btn-full btn-sm" onclick="testLine()">
-          📱 ทดสอบส่ง LINE
-        </button>
-      </div>
+      <button class="btn btn-green btn-full" onclick="saveScheduler()">
+        💾 บันทึกการตั้งค่า Auto
+      </button>
     </div>
   </div>
 
   <!-- Keywords -->
   <div class="panel">
-    <div class="ph">
-      <div class="ptitle">🔑 Keywords</div>
-    </div>
+    <div class="ph"><div class="ptitle">🔑 Keywords</div></div>
     <div class="pb">
       <div class="fg">
         <label class="fl">คำค้นหาข่าว (NewsAPI) — คั่น comma</label>
         <textarea class="fta" id="kw-search" placeholder="Iran attack, war, strike..."></textarea>
-        <div class="hint">ส่งได้สูงสุด 5 คำไปยัง NewsAPI</div>
+        <div class="hint">สูงสุด 5 คำ</div>
       </div>
       <div class="fg">
         <label class="fl">🚨 Danger Keywords</label>
@@ -379,9 +451,16 @@ header{background:linear-gradient(180deg,rgba(13,17,23,.98) 0%,rgba(13,17,23,.8)
       <span class="badge b-neutral" id="news-count-badge">0</span>
     </div>
     <div style="display:flex;gap:5px">
-      <button class="btn btn-ghost btn-sm" onclick="loadNews()" title="รีเฟรช">↻ Refresh</button>
+      <button class="btn btn-ghost btn-sm" onclick="loadNews()">↻ Refresh</button>
       <button class="btn btn-red btn-sm" onclick="deleteAll()">🗑 ลบทั้งหมด</button>
     </div>
+  </div>
+
+  <!-- Channel active status bar -->
+  <div class="ch-status" id="ch-status-bar">
+    <span style="color:var(--dim)">Channels:</span>
+    <span class="ch-badge off" id="ch-line-badge">📱 LINE —</span>
+    <span class="ch-badge off" id="ch-fb-badge">📘 Facebook —</span>
   </div>
 
   <div class="tabs">
@@ -389,7 +468,8 @@ header{background:linear-gradient(180deg,rgba(13,17,23,.98) 0%,rgba(13,17,23,.8)
     <button class="tab" onclick="setTab('danger',this)">🚨 Danger</button>
     <button class="tab" onclick="setTab('peace',this)">☮️ Peace</button>
     <button class="tab" onclick="setTab('neutral',this)">⚪ Neutral</button>
-    <button class="tab" onclick="setTab('sent',this)">📱 ส่งแล้ว</button>
+    <button class="tab" onclick="setTab('sent',this)">📱 LINE ส่ง</button>
+    <button class="tab" onclick="setTab('fb_sent',this)">📘 FB โพสต์</button>
   </div>
 
   <div class="nlist" id="news-list">
@@ -429,21 +509,42 @@ function updateIvHint() {
   document.getElementById('iv-hint').textContent = `= ทุก ${v} ${unitTH(u)}`;
 }
 
-// ── Date Range ─────────────────────────────────────────────
+// ── Date Presets ────────────────────────────────────────────
+function setPreset(preset) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const fmt = d => d.toISOString().slice(0, 10); // YYYY-MM-DD
+
+  let from = new Date(today), to = new Date(today);
+  if (preset === 'yesterday') {
+    from.setDate(from.getDate() - 1);
+    to.setDate(to.getDate() - 1);
+  } else if (preset === '7d') {
+    from.setDate(from.getDate() - 6);
+  } else if (preset === '30d') {
+    from.setDate(from.getDate() - 29);
+  }
+
+  document.getElementById('from-dt').value = fmt(from);
+  document.getElementById('to-dt').value   = fmt(to);
+  document.getElementById('from-tm').value = '00:00';
+  document.getElementById('to-tm').value   = '23:59';
+
+  // ensure date range panel is open
+  document.getElementById('use-daterange').checked = true;
+  document.getElementById('daterange-panel').style.display = 'block';
+}
+
+// ── Date Range Toggle ───────────────────────────────────────
 function toggleDateRange() {
   const on = document.getElementById('use-daterange').checked;
-  const panel = document.getElementById('daterange-panel');
-  panel.style.display = on ? 'block' : 'none';
-  if (on) {
-    const now = new Date();
-    const ago = new Date(now - 7 * 86400000);
-    const toLocal = d => new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-    document.getElementById('from-dt').value = toLocal(ago);
-    document.getElementById('to-dt').value = toLocal(now);
+  document.getElementById('daterange-panel').style.display = on ? 'block' : 'none';
+  if (on && !document.getElementById('from-dt').value) {
+    setPreset('7d'); // default to last 7 days when first opened
   }
 }
 
-// ── LINE Preview toggle ─────────────────────────────────────
+// ── LINE Preview Toggle ─────────────────────────────────────
 function togglePreview(id) {
   const box = document.getElementById(`prev-${id}`);
   const btn = document.getElementById(`pbtn-${id}`);
@@ -453,29 +554,41 @@ function togglePreview(id) {
   btn.textContent = hidden ? '📋 ซ่อน LINE Preview ▲' : '📋 ดู LINE Preview ▼';
 }
 
+// ── Update channel status bar ───────────────────────────────
+function updateChannelBar(lineOn, fbOn) {
+  const lineEl = document.getElementById('ch-line-badge');
+  const fbEl   = document.getElementById('ch-fb-badge');
+
+  lineEl.className = `ch-badge ${lineOn ? 'on-line' : 'off'}`;
+  lineEl.textContent = `📱 LINE ${lineOn ? 'เปิด' : 'ปิด'}`;
+
+  fbEl.className = `ch-badge ${fbOn ? 'on-fb' : 'off'}`;
+  fbEl.textContent = `📘 Facebook ${fbOn ? 'เปิด' : 'ปิด'}`;
+
+  // Header badges
+  document.getElementById('line-ch-badge').style.display = lineOn ? 'flex' : 'none';
+  document.getElementById('fb-ch-badge').style.display   = fbOn   ? 'flex' : 'none';
+}
+
 // ── Load Status ─────────────────────────────────────────────
 async function loadStatus() {
   try {
     const d = await (await fetch(`${API}/api/status`)).json();
 
-    document.getElementById('s-total').textContent  = d.total_news  ?? '—';
-    document.getElementById('s-sent').textContent   = d.sent_news   ?? '—';
+    document.getElementById('s-total').textContent  = d.total_news   ?? '—';
+    document.getElementById('s-sent').textContent   = d.sent_news    ?? '—';
+    document.getElementById('s-fbsent').textContent = d.fb_sent      ?? '—';
     document.getElementById('s-danger').textContent = d.danger_count ?? '—';
     document.getElementById('s-peace').textContent  = d.peace_count  ?? '—';
 
-    // Only update controls when not actively editing
-    if (document.activeElement.id !== 'toggle-auto') {
+    if (document.activeElement.id !== 'toggle-auto')
       document.getElementById('toggle-auto').checked = d.auto_fetch;
-    }
-    if (document.activeElement.id !== 'iv-value') {
+    if (document.activeElement.id !== 'iv-value')
       document.getElementById('iv-value').value = d.interval_value || 30;
-    }
-    if (document.activeElement.id !== 'iv-unit') {
+    if (document.activeElement.id !== 'iv-unit')
       document.getElementById('iv-unit').value = d.interval_unit || 'minutes';
-    }
     updateIvHint();
 
-    // Auto badge
     const badge = document.getElementById('auto-badge');
     badge.style.display = d.auto_fetch ? 'flex' : 'none';
     document.getElementById('auto-badge-txt').textContent =
@@ -486,14 +599,22 @@ async function loadStatus() {
       : 'Manual mode';
 
     if (d.last_fetch) {
-      const dt = new Date(d.last_fetch + (d.last_fetch.endsWith('Z') ? '' : 'Z'));
-      const timeStr = dt.toLocaleString('th-TH', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-      document.getElementById('s-lastfetch').textContent = timeStr;
-      document.getElementById('hdr-last-time').textContent = timeStr;
+      const dt = new Date(d.last_fetch.endsWith('Z') ? d.last_fetch : d.last_fetch + 'Z');
+      const opts = {timeZone:'Asia/Bangkok'};
+      const ts = dt.toLocaleString('th-TH', {...opts, hour:'2-digit', minute:'2-digit', second:'2-digit'});
+      document.getElementById('s-lastfetch').textContent = ts;
+      document.getElementById('hdr-last-time').textContent = ts;
       document.getElementById('last-badge').style.display = 'flex';
-      document.getElementById('last-fetch-txt').textContent =
-        'ล่าสุด: ' + dt.toLocaleString('th-TH');
+      document.getElementById('last-fetch-txt').textContent = 'ล่าสุด: ' + dt.toLocaleString('th-TH', opts);
     }
+
+    // Channel toggles (only update if not actively editing)
+    if (document.activeElement.id !== 'toggle-line')
+      document.getElementById('toggle-line').checked = d.line_enabled !== false;
+    if (document.activeElement.id !== 'toggle-fb')
+      document.getElementById('toggle-fb').checked = !!d.facebook_enabled;
+
+    updateChannelBar(d.line_enabled !== false, !!d.facebook_enabled);
   } catch(e) { console.error('loadStatus:', e); }
 }
 
@@ -506,6 +627,32 @@ async function loadSettings() {
     document.getElementById('kw-peace').value  = d.peace_keywords || '';
     document.getElementById('kw-hours').value  = d.max_news_age_hours || 6;
   } catch(e) {}
+}
+
+// ── Save Channel Settings ───────────────────────────────────
+async function saveChannels() {
+  const lineOn = document.getElementById('toggle-line').checked;
+  const fbOn   = document.getElementById('toggle-fb').checked;
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div> กำลังบันทึก...';
+
+  try {
+    const r = await fetch(`${API}/api/settings/channels`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({line_enabled: lineOn, facebook_enabled: fbOn}),
+    });
+    if (r.ok) {
+      toast(`บันทึกแล้ว — LINE ${lineOn?'เปิด':'ปิด'} · Facebook ${fbOn?'เปิด':'ปิด'} ✅`);
+      updateChannelBar(lineOn, fbOn);
+    } else {
+      toast('บันทึกไม่สำเร็จ', 'err');
+    }
+  } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
+
+  btn.disabled = false;
+  btn.innerHTML = '💾 บันทึก Channel Settings';
 }
 
 // ── Save Scheduler ──────────────────────────────────────────
@@ -521,15 +668,12 @@ async function saveScheduler() {
 
   try {
     const r = await fetch(`${API}/api/settings/scheduler`, {
-      method: 'PUT',
-      headers: {'Content-Type':'application/json'},
+      method: 'PUT', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({auto_fetch: auto, interval_value: val, interval_unit: unit}),
     });
-    if (r.ok) {
-      toast(auto ? `เปิด Auto ทุก ${val} ${unitTH(unit)} ✅` : 'ปิด Auto Fetch แล้ว ✅');
-    } else {
-      toast('บันทึกไม่สำเร็จ — ' + r.status, 'err');
-    }
+    r.ok
+      ? toast(auto ? `เปิด Auto ทุก ${val} ${unitTH(unit)} ✅` : 'ปิด Auto Fetch ✅')
+      : toast('บันทึกไม่สำเร็จ', 'err');
     await loadStatus();
   } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
 
@@ -545,12 +689,11 @@ async function saveKeywords() {
 
   try {
     const r = await fetch(`${API}/api/settings/keywords`, {
-      method: 'PUT',
-      headers: {'Content-Type':'application/json'},
+      method: 'PUT', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
-        keywords: document.getElementById('kw-search').value,
-        danger_keywords: document.getElementById('kw-danger').value,
-        peace_keywords:  document.getElementById('kw-peace').value,
+        keywords:           document.getElementById('kw-search').value,
+        danger_keywords:    document.getElementById('kw-danger').value,
+        peace_keywords:     document.getElementById('kw-peace').value,
         max_news_age_hours: parseInt(document.getElementById('kw-hours').value) || 6,
       }),
     });
@@ -565,39 +708,39 @@ async function saveKeywords() {
 async function manualFetch() {
   const btn  = document.getElementById('btn-fetch');
   const wrap = document.getElementById('fetch-wrap');
-
   btn.disabled = true;
-  btn.innerHTML = '<div class="spin"></div> กำลังดึงข่าว + แปลภาษา...';
+  btn.innerHTML = '<div class="spin"></div> กำลังดึง + แปลภาษา...';
   wrap.classList.add('loading');
 
   const useRange = document.getElementById('use-daterange').checked;
   let body = {};
 
   if (useRange) {
-    const f = document.getElementById('from-dt').value;
-    const t = document.getElementById('to-dt').value;
+    const f  = document.getElementById('from-dt').value;
+    const t  = document.getElementById('to-dt').value;
+    const ft = document.getElementById('from-tm').value || '00:00';
+    const tt = document.getElementById('to-tm').value   || '23:59';
     if (!f || !t) {
-      toast('กรุณาระบุวันเริ่มต้นและสิ้นสุด', 'err');
+      toast('กรุณาเลือกวันเริ่มต้นและสิ้นสุด', 'err');
       btn.disabled = false;
       btn.innerHTML = '🔍 ค้นหาข่าวตอนนี้';
       wrap.classList.remove('loading');
       return;
     }
-    body = {
-      from_datetime: new Date(f).toISOString(),
-      to_datetime:   new Date(t).toISOString(),
-    };
+    body = {from_datetime: f + 'T' + ft + ':00', to_datetime: t + 'T' + tt + ':59'};
   }
 
   try {
     const r = await fetch(`${API}/api/news/fetch`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify(body),
     });
     const d = await r.json();
     if (r.ok) {
-      toast(`ดึงข่าว ${d.fetched} รายการ · ใหม่ ${d.new} · ส่ง LINE ${d.sent} รายการ`);
+      let msg = `ดึง ${d.fetched} รายการ · ใหม่ ${d.new}`;
+      if (d.sent_line > 0)  msg += ` · LINE ${d.sent_line}`;
+      if (d.sent_fb   > 0)  msg += ` · FB ${d.sent_fb}`;
+      toast(msg);
     } else {
       toast('เกิดข้อผิดพลาดในการดึงข่าว', 'err');
     }
@@ -613,15 +756,26 @@ async function manualFetch() {
 async function testLine() {
   const btn = event.currentTarget;
   btn.disabled = true;
-  btn.innerHTML = '<div class="spin"></div> กำลังส่ง...';
-
+  btn.innerHTML = '<div class="spin"></div>';
   try {
     const d = await (await fetch(`${API}/api/line/test`, {method:'POST'})).json();
     d.success ? toast('📱 ส่ง LINE สำเร็จ!') : toast('ส่ง LINE ไม่สำเร็จ — ตรวจสอบ Token', 'err');
   } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
-
   btn.disabled = false;
-  btn.innerHTML = '📱 ทดสอบส่ง LINE';
+  btn.innerHTML = '📱 Test LINE';
+}
+
+// ── Test Facebook ───────────────────────────────────────────
+async function testFacebook() {
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div>';
+  try {
+    const d = await (await fetch(`${API}/api/facebook/test`, {method:'POST'})).json();
+    d.success ? toast('📘 โพสต์ Facebook สำเร็จ!') : toast('Facebook ไม่สำเร็จ — ตรวจสอบ Page Token', 'err');
+  } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
+  btn.disabled = false;
+  btn.innerHTML = '📘 Test FB';
 }
 
 // ── News ────────────────────────────────────────────────────
@@ -648,62 +802,62 @@ function renderNews() {
   else if (curTab === 'peace')   list = allNews.filter(n => n.category === 'peace');
   else if (curTab === 'neutral') list = allNews.filter(n => n.category === 'neutral');
   else if (curTab === 'sent')    list = allNews.filter(n => n.line_sent);
+  else if (curTab === 'fb_sent') list = allNews.filter(n => n.facebook_sent);
 
-  const badge = document.getElementById('news-count-badge');
-  badge.textContent = list.length;
-  badge.className = `badge ${list.length ? 'b-blue' : 'b-neutral'}`;
+  document.getElementById('news-count-badge').textContent = list.length;
 
   const container = document.getElementById('news-list');
-
   if (!list.length) {
     container.innerHTML = '<div class="empty"><span class="ei">📭</span><p>ไม่มีข่าวในหมวดนี้</p></div>';
     return;
   }
 
   container.innerHTML = list.map(n => {
-    const cat       = n.category || 'neutral';
-    const badgeCls  = cat === 'danger' ? 'b-danger' : cat === 'peace' ? 'b-peace' : 'b-neutral';
-    const catIcon   = cat === 'danger' ? '🚨' : cat === 'peace' ? '☮️' : '⚪';
-    const catLabel  = cat.toUpperCase();
+    const cat      = n.category || 'neutral';
+    const badgeCls = cat === 'danger' ? 'b-danger' : cat === 'peace' ? 'b-peace' : 'b-neutral';
+    const catIcon  = cat === 'danger' ? '🚨' : cat === 'peace' ? '☮️' : '⚪';
 
-    // Bilingual title
-    const hasTH     = n.title_th && n.title_th !== n.title && n.title_th.trim() !== '';
+    const hasTH    = n.title_th && n.title_th !== n.title && n.title_th.trim() !== '';
     const titleMain = esc(hasTH ? n.title_th : n.title);
-    const titleSub  = hasTH
-      ? `<div class="ntitle-en">🔤 ${esc(n.title)}</div>`
+    const titleSub  = hasTH ? `<div class="ntitle-en">🔤 ${esc(n.title)}</div>` : '';
+
+    const descText = n.description
+      ? esc(n.description.slice(0, 160)) + (n.description.length > 160 ? '…' : '') : '';
+    const pub = n.published_at
+      ? new Date(n.published_at.endsWith('Z') ? n.published_at : n.published_at + '+00:00')
+          .toLocaleString('th-TH', {timeZone:'Asia/Bangkok', year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})
       : '';
 
-    const descText  = n.description ? esc(n.description.slice(0, 160)) + (n.description.length > 160 ? '…' : '') : '';
-    const pub       = n.published_at ? new Date(n.published_at).toLocaleString('th-TH') : '';
+    const lineBadge  = n.line_sent     ? '<span class="badge b-sent">📱 LINE</span>'    : '';
+    const fbBadge    = n.facebook_sent ? '<span class="badge b-fb">📘 Facebook</span>'  : '';
+    const transBadge = hasTH           ? '<span class="badge b-trans">🇹🇭 แปลแล้ว</span>' : '';
 
-    const sentBadge  = n.line_sent ? '<span class="badge b-sent">📱 ส่งแล้ว</span>' : '';
-    const transBadge = hasTH ? '<span class="badge b-trans">🇹🇭 แปลแล้ว</span>' : '';
-
-    const previewBlock = n.alert_message ? `
+    const preview = n.alert_message ? `
       <button class="preview-toggle" id="pbtn-${n.id}" onclick="togglePreview(${n.id})">📋 ดู LINE Preview ▼</button>
-      <div class="apreview" id="prev-${n.id}">${esc(n.alert_message)}</div>
-    ` : '';
+      <div class="apreview" id="prev-${n.id}">${esc(n.alert_message)}</div>` : '';
 
-    const sendBtn = (!n.line_sent && n.alert_message)
-      ? `<button class="btn btn-blue btn-sm" onclick="sendLine(${n.id})">📱 ส่ง LINE</button>`
-      : '';
+    const sendLineBtn = (!n.line_sent && n.alert_message)
+      ? `<button class="btn btn-blue btn-sm" onclick="sendLine(${n.id})">📱 LINE</button>` : '';
+    const postFBBtn   = (!n.facebook_sent && n.alert_message)
+      ? `<button class="btn btn-fb btn-sm" onclick="postFacebook(${n.id})">📘 FB</button>` : '';
 
     return `
 <div class="ncard ${cat}" id="nc-${n.id}">
   <div class="nmeta">
-    <span class="badge ${badgeCls}">${catIcon} ${catLabel}</span>
-    ${sentBadge}${transBadge}
+    <span class="badge ${badgeCls}">${catIcon} ${cat.toUpperCase()}</span>
+    ${lineBadge}${fbBadge}${transBadge}
     <span class="nsrc" style="margin-left:auto">${esc(n.source || '')}</span>
   </div>
   <div class="ntitle">${titleMain}</div>
   ${titleSub}
   ${descText ? `<div class="ndesc">${descText}</div>` : ''}
-  ${previewBlock}
+  ${preview}
   <div class="nfoot">
     <span class="nsrc">${pub}</span>
     <div class="nact">
-      <a href="${esc(n.url)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">🔗 ลิงก์</a>
-      ${sendBtn}
+      <a href="${esc(n.url)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">🔗</a>
+      ${sendLineBtn}
+      ${postFBBtn}
       <button class="btn btn-red btn-sm" onclick="delNews(${n.id})">🗑</button>
     </div>
   </div>
@@ -711,14 +865,25 @@ function renderNews() {
   }).join('');
 }
 
+// ── Send LINE ───────────────────────────────────────────────
 async function sendLine(id) {
   try {
     const d = await (await fetch(`${API}/api/line/send/${id}`, {method:'POST'})).json();
-    d.success ? toast('📱 ส่ง LINE สำเร็จ!') : toast('ส่งไม่สำเร็จ — ตรวจสอบ Token', 'err');
+    d.success ? toast('📱 ส่ง LINE สำเร็จ!') : toast('ส่ง LINE ไม่สำเร็จ', 'err');
     await Promise.all([loadNews(), loadStatus()]);
   } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
 }
 
+// ── Post Facebook ───────────────────────────────────────────
+async function postFacebook(id) {
+  try {
+    const d = await (await fetch(`${API}/api/facebook/send/${id}`, {method:'POST'})).json();
+    d.success ? toast('📘 โพสต์ Facebook สำเร็จ!') : toast('โพสต์ Facebook ไม่สำเร็จ', 'err');
+    await Promise.all([loadNews(), loadStatus()]);
+  } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
+}
+
+// ── Delete ──────────────────────────────────────────────────
 async function delNews(id) {
   if (!confirm('ลบข่าวนี้?')) return;
   try {

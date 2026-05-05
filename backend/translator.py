@@ -11,7 +11,7 @@ async def translate_to_thai(text: str) -> str:
     if not text or is_thai(text):
         return text
     try:
-        async with httpx.AsyncClient(timeout=8) as client:
+        async with httpx.AsyncClient(timeout=8, trust_env=False) as client:
             resp = await client.get(
                 "https://translate.googleapis.com/translate_a/single",
                 params={"client": "gtx", "sl": "auto", "tl": "th", "dt": "t", "q": text[:500]},

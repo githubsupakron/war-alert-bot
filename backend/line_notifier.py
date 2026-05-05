@@ -22,7 +22,7 @@ async def send_line_message(message: str, user_id: Optional[str] = None) -> bool
     }
 
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
+        async with httpx.AsyncClient(timeout=10, trust_env=False) as client:
             resp = await client.post(
                 "https://api.line.me/v2/bot/message/push",
                 headers=headers,
@@ -52,7 +52,7 @@ async def broadcast_line_message(message: str) -> bool:
     payload = {"messages": [{"type": "text", "text": message}]}
 
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
+        async with httpx.AsyncClient(timeout=10, trust_env=False) as client:
             resp = await client.post(
                 "https://api.line.me/v2/bot/message/broadcast",
                 headers=headers,
