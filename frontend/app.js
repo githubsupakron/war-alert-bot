@@ -1,0 +1,389 @@
+const API = '';
+let allNews = [], curTab = 'all', curPage = 1;
+const PAGE_SIZE = 4;
+
+// ── Utilities ──────────────────────────────────────────────
+function esc(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function toast(msg, type = 'ok') {
+  const t = document.getElementById('toast');
+  clearTimeout(toastTimer);
+  t.className = `show ${type}`;
+  t.innerHTML = (type === 'ok' ? '✅ ' : type === 'err' ? '❌ ' : 'ℹ️ ') + msg;
+  toastTimer = setTimeout(() => t.className = '', 4000);
+}
+
+function unitShort(u) { return {seconds:'s',minutes:'m',hours:'h',days:'d'}[u] || 'm'; }
+function unitTH(u)    { return {seconds:'วินาที',minutes:'นาที',hours:'ชั่วโมง',days:'วัน'}[u] || 'นาที'; }
+
+function updateIvHint() {
+  const v = document.getElementById('iv-value').value;
+  const u = document.getElementById('iv-unit').value;
+  document.getElementById('iv-hint').innerHTML = `<i class="fa-solid fa-equals" style="margin-right:3px"></i> = ทุก ${v} ${unitTH(u)}`;
+}
+
+// ── Date Range ─────────────────────────────────────────────
+function toggleDateRange() {
+  const on = document.getElementById('use-daterange').checked;
+  const panel = document.getElementById('daterange-panel');
+  panel.style.display = on ? 'block' : 'none';
+  if (on) {
+    const now = new Date();
+    const ago = new Date(now - 7 * 86400000);
+    const toLocal = d => new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    document.getElementById('from-dt').value = toLocal(ago);
+    document.getElementById('to-dt').value = toLocal(now);
+  }
+}
+
+// ── LINE Preview toggle ─────────────────────────────────────
+function togglePreview(id) {
+  const box = document.getElementById(`prev-${id}`);
+  const btn = document.getElementById(`pbtn-${id}`);
+  if (!box) return;
+  const hidden = box.style.display === 'none';
+  box.style.display = hidden ? 'block' : 'none';
+  btn.textContent = hidden ? '📋 ซ่อน LINE Preview ▲' : '📋 ดู LINE Preview ▼';
+}
+
+// ── Load Status ─────────────────────────────────────────────
+async function loadStatus() {
+  try {
+    const d = await (await fetch(`${API}/api/status`)).json();
+
+    document.getElementById('s-total').textContent  = d.total_news  ?? '—';
+    document.getElementById('s-sent').textContent   = d.sent_news   ?? '—';
+    document.getElementById('s-danger').textContent = d.danger_count ?? '—';
+    document.getElementById('s-peace').textContent  = d.peace_count  ?? '—';
+
+    // Only update controls when not actively editing
+    if (document.activeElement.id !== 'toggle-auto') {
+      document.getElementById('toggle-auto').checked = d.auto_fetch;
+    }
+    if (document.activeElement.id !== 'iv-value') {
+      document.getElementById('iv-value').value = d.interval_value || 30;
+    }
+    if (document.activeElement.id !== 'iv-unit') {
+      document.getElementById('iv-unit').value = d.interval_unit || 'minutes';
+    }
+    updateIvHint();
+
+    // Auto badge
+    const badge = document.getElementById('auto-badge');
+    badge.style.display = d.auto_fetch ? 'flex' : 'none';
+    document.getElementById('auto-badge-txt').textContent =
+      `AUTO / ${d.interval_value}${unitShort(d.interval_unit)}`;
+
+    document.getElementById('s-mode').textContent = d.auto_fetch
+      ? `Auto ทุก ${d.interval_value} ${unitTH(d.interval_unit)}`
+      : 'Manual mode';
+
+    if (d.last_fetch) {
+      const dt = new Date(d.last_fetch + (d.last_fetch.endsWith('Z') ? '' : 'Z'));
+      const timeStr = dt.toLocaleString('th-TH', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      document.getElementById('s-lastfetch').textContent = timeStr;
+      document.getElementById('hdr-last-time').textContent = timeStr;
+      document.getElementById('last-badge').style.display = 'flex';
+      document.getElementById('last-fetch-txt').textContent =
+        'ล่าสุด: ' + dt.toLocaleString('th-TH');
+    }
+  } catch(e) { console.error('loadStatus:', e); }
+}
+
+// ── Load Settings ───────────────────────────────────────────
+async function loadSettings() {
+  try {
+    const d = await (await fetch(`${API}/api/settings`)).json();
+    document.getElementById('kw-search').value = d.keywords || '';
+    document.getElementById('kw-danger').value = d.danger_keywords || '';
+    document.getElementById('kw-peace').value  = d.peace_keywords || '';
+    document.getElementById('kw-hours').value  = d.max_news_age_hours || 6;
+  } catch(e) {}
+}
+
+// ── Save Scheduler ──────────────────────────────────────────
+async function saveScheduler() {
+  const auto = document.getElementById('toggle-auto').checked;
+  const val  = parseInt(document.getElementById('iv-value').value);
+  const unit = document.getElementById('iv-unit').value;
+  if (!val || val < 1) { toast('Interval ต้องมากกว่า 0', 'err'); return; }
+
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div> กำลังบันทึก...';
+
+  try {
+    const r = await fetch(`${API}/api/settings/scheduler`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({auto_fetch: auto, interval_value: val, interval_unit: unit}),
+    });
+    if (r.ok) {
+      toast(auto ? `เปิด Auto ทุก ${val} ${unitTH(unit)} ✅` : 'ปิด Auto Fetch แล้ว ✅');
+    } else {
+      toast('บันทึกไม่สำเร็จ — ' + r.status, 'err');
+    }
+    await loadStatus();
+  } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่า Auto';
+}
+
+// ── Save Keywords ───────────────────────────────────────────
+async function saveKeywords() {
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div> กำลังบันทึก...';
+
+  try {
+    const r = await fetch(`${API}/api/settings/keywords`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        keywords: document.getElementById('kw-search').value,
+        danger_keywords: document.getElementById('kw-danger').value,
+        peace_keywords:  document.getElementById('kw-peace').value,
+        max_news_age_hours: parseInt(document.getElementById('kw-hours').value) || 6,
+      }),
+    });
+    r.ok ? toast('บันทึก Keywords สำเร็จ ✅') : toast('บันทึกไม่สำเร็จ', 'err');
+  } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึก Keywords';
+}
+
+// ── Manual Fetch ────────────────────────────────────────────
+async function manualFetch() {
+  const btn  = document.getElementById('btn-fetch');
+  const wrap = document.getElementById('fetch-wrap');
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div> กำลังดึงข่าว + แปลภาษา...';
+  wrap.classList.add('loading');
+
+  const useRange = document.getElementById('use-daterange').checked;
+  let body = {};
+
+  if (useRange) {
+    const f = document.getElementById('from-dt').value;
+    const t = document.getElementById('to-dt').value;
+    if (!f || !t) {
+      toast('กรุณาระบุวันเริ่มต้นและสิ้นสุด', 'err');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> ค้นหาข่าวตอนนี้';
+      wrap.classList.remove('loading');
+      return;
+    }
+    body = {
+      from_datetime: new Date(f).toISOString(),
+      to_datetime:   new Date(t).toISOString(),
+    };
+  }
+
+  try {
+    const r = await fetch(`${API}/api/news/fetch`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    if (r.ok) {
+      toast(`ดึงข่าว ${d.fetched} รายการ · ใหม่ ${d.new} · ส่ง LINE ${d.sent} รายการ`);
+    } else {
+      toast('เกิดข้อผิดพลาดในการดึงข่าว', 'err');
+    }
+    await Promise.all([loadNews(), loadStatus()]);
+  } catch(e) { toast('เกิดข้อผิดพลาด: ' + e.message, 'err'); }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> ค้นหาข่าวตอนนี้';
+  wrap.classList.remove('loading');
+}
+
+// ── Test LINE ───────────────────────────────────────────────
+async function testLine() {
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div> กำลังส่ง...';
+
+  try {
+    const d = await (await fetch(`${API}/api/line/test`, {method:'POST'})).json();
+    d.success ? toast('📱 ส่ง LINE สำเร็จ!') : toast('ส่ง LINE ไม่สำเร็จ — ตรวจสอบ Token', 'err');
+  } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-brands fa-line"></i> ทดสอบส่ง LINE';
+}
+
+// ── News ────────────────────────────────────────────────────
+async function loadNews() {
+  try {
+    allNews = await (await fetch(`${API}/api/news?limit=200`)).json();
+    renderNews();
+  } catch(e) {
+    document.getElementById('news-list').innerHTML =
+      '<div class="empty"><span class="ei">⚠️</span><p>เชื่อมต่อ API ไม่ได้</p></div>';
+  }
+}
+
+function setTab(tab, el) {
+  curTab = tab;
+  curPage = 1;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderNews();
+}
+
+function getFilteredNews() {
+  if      (curTab === 'danger')  return allNews.filter(n => n.category === 'danger');
+  else if (curTab === 'peace')   return allNews.filter(n => n.category === 'peace');
+  else if (curTab === 'neutral') return allNews.filter(n => n.category === 'neutral');
+  else if (curTab === 'sent')    return allNews.filter(n => n.line_sent);
+  return allNews;
+}
+
+function goPage(p) {
+  const totalPages = Math.max(1, Math.ceil(getFilteredNews().length / PAGE_SIZE));
+  curPage = Math.max(1, Math.min(p, totalPages));
+  renderNews();
+  document.getElementById('news-list').scrollTop = 0;
+}
+
+function renderNews() {
+  const list = getFilteredNews();
+  const total = list.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (curPage > totalPages) curPage = totalPages;
+
+  const badge = document.getElementById('news-count-badge');
+  badge.textContent = total;
+  badge.className = `badge ${total ? 'b-blue' : 'b-neutral'}`;
+
+  const container = document.getElementById('news-list');
+  const pager = document.getElementById('news-pagination');
+
+  if (!total) {
+    container.innerHTML = '<div class="empty"><span class="ei">📭</span><p>ไม่มีข่าวในหมวดนี้</p></div>';
+    pager.innerHTML = '';
+    return;
+  }
+
+  const start = (curPage - 1) * PAGE_SIZE;
+  const pageItems = list.slice(start, start + PAGE_SIZE);
+  const pStart = start + 1;
+  const pEnd = Math.min(curPage * PAGE_SIZE, total);
+
+  pager.innerHTML = `
+    <div class="pager">
+      <span class="pager-info">${pStart}–${pEnd} / ${total} รายการ</span>
+      <div class="pager-btns">
+        <button class="btn btn-ghost btn-sm" onclick="goPage(${curPage - 1})" ${curPage === 1 ? 'disabled' : ''}>
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <span class="pager-num">${curPage} / ${totalPages}</span>
+        <button class="btn btn-ghost btn-sm" onclick="goPage(${curPage + 1})" ${curPage === totalPages ? 'disabled' : ''}>
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>`;
+
+  container.innerHTML = pageItems.map(n => {
+    const cat       = n.category || 'neutral';
+    const badgeCls  = cat === 'danger' ? 'b-danger' : cat === 'peace' ? 'b-peace' : 'b-neutral';
+    const catIcon   = cat === 'danger'
+      ? '<i class="fa-solid fa-triangle-exclamation"></i>'
+      : cat === 'peace'
+      ? '<i class="fa-solid fa-dove"></i>'
+      : '⚪';
+    const catLabel  = cat.toUpperCase();
+
+    // Bilingual title
+    const hasTH     = n.title_th && n.title_th !== n.title && n.title_th.trim() !== '';
+    const titleMain = esc(hasTH ? n.title_th : n.title);
+    const titleSub  = hasTH
+      ? `<div class="ntitle-en"><i class="fa-solid fa-language" style="margin-right:4px;color:var(--purple)"></i>${esc(n.title)}</div>`
+      : '';
+
+    const descText  = n.description ? esc(n.description.slice(0, 160)) + (n.description.length > 160 ? '…' : '') : '';
+    const pub       = n.published_at ? new Date(n.published_at).toLocaleString('th-TH') : '';
+
+    const sentBadge  = n.line_sent ? '<span class="badge b-sent"><i class="fa-brands fa-line"></i> ส่งแล้ว</span>' : '';
+    const transBadge = hasTH ? '<span class="badge b-trans">🇹🇭 แปลแล้ว</span>' : '';
+
+    const previewBlock = n.alert_message ? `
+      <button class="preview-toggle" id="pbtn-${n.id}" onclick="togglePreview(${n.id})">📋 ดู LINE Preview ▼</button>
+      <div class="apreview" id="prev-${n.id}">${esc(n.alert_message)}</div>
+    ` : '';
+
+    const sendBtn = (!n.line_sent && n.alert_message)
+      ? `<button class="btn btn-primary btn-sm" onclick="sendLine(${n.id})"><i class="fa-brands fa-line"></i> ส่ง LINE</button>`
+      : '';
+
+    return `
+<div class="ncard ${cat}" id="nc-${n.id}">
+  <div class="nmeta">
+    <span class="badge ${badgeCls}">${catIcon} ${catLabel}</span>
+    ${sentBadge}${transBadge}
+    <span class="nsrc" style="margin-left:auto">${esc(n.source || '')}</span>
+  </div>
+  <div class="ntitle">${titleMain}</div>
+  ${titleSub}
+  ${descText ? `<div class="ndesc">${descText}</div>` : ''}
+  ${previewBlock}
+  <div class="nfoot">
+    <span class="nsrc">${pub}</span>
+    <div class="nact">
+      <a href="${esc(n.url)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">
+        <i class="fa-solid fa-arrow-up-right-from-square"></i> ลิงก์
+      </a>
+      ${sendBtn}
+      <button class="btn btn-danger btn-sm" onclick="delNews(${n.id})">
+        <i class="fa-solid fa-trash"></i>
+      </button>
+    </div>
+  </div>
+</div>`;
+  }).join('');
+}
+
+async function sendLine(id) {
+  try {
+    const d = await (await fetch(`${API}/api/line/send/${id}`, {method:'POST'})).json();
+    d.success ? toast('📱 ส่ง LINE สำเร็จ!') : toast('ส่งไม่สำเร็จ — ตรวจสอบ Token', 'err');
+    await Promise.all([loadNews(), loadStatus()]);
+  } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
+}
+
+async function delNews(id) {
+  if (!confirm('ลบข่าวนี้?')) return;
+  try {
+    await fetch(`${API}/api/news/${id}`, {method:'DELETE'});
+    toast('ลบข่าวแล้ว');
+    allNews = allNews.filter(n => n.id !== id);
+    renderNews();
+    loadStatus();
+  } catch(e) {}
+}
+
+async function deleteAll() {
+  if (!confirm('⚠️ ลบข่าวทั้งหมดในฐานข้อมูล?')) return;
+  try {
+    await fetch(`${API}/api/news`, {method:'DELETE'});
+    toast('ลบทั้งหมดแล้ว');
+    allNews = [];
+    renderNews();
+    loadStatus();
+  } catch(e) {}
+}
+
+// ── Init ────────────────────────────────────────────────────
+document.getElementById('iv-value').addEventListener('input',  updateIvHint);
+document.getElementById('iv-unit').addEventListener('change',  updateIvHint);
+
+Promise.all([loadStatus(), loadSettings(), loadNews()]);
+setInterval(() => { loadStatus(); loadNews(); }, 30000);

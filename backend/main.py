@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -322,10 +323,12 @@ async def send_line_for_news(news_id: int, db: Session = Depends(get_db)):
 
 # ─── Frontend ─────────────────────────────────────────────────
 
+_frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
+app.mount("/static", StaticFiles(directory=_frontend_dir), name="static")
+
 @app.get("/")
 async def serve_frontend():
-    frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "index.html")
-    return FileResponse(os.path.abspath(frontend_path))
+    return FileResponse(os.path.join(_frontend_dir, "index.html"))
 
 
 if __name__ == "__main__":
