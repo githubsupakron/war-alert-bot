@@ -69,6 +69,8 @@ def init_db():
         _migrate_column(db, "ALTER TABLE news_items ADD COLUMN classification_reason TEXT DEFAULT ''")
         _migrate_column(db, "ALTER TABLE news_items ADD COLUMN llm_used BOOLEAN DEFAULT 0")
         _migrate_column(db, "ALTER TABLE news_items ADD COLUMN llm_fallback BOOLEAN DEFAULT 0")
+        # Unique index on url — prevents duplicate rows if lock ever races
+        _migrate_column(db, "CREATE UNIQUE INDEX IF NOT EXISTS ix_news_items_url ON news_items (url)")
     finally:
         db.close()
 

@@ -4,11 +4,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from pydantic import BaseModel
+import asyncio
 import os
 from dotenv import load_dotenv
 
@@ -25,6 +27,7 @@ from translator import translate_to_thai
 scheduler = AsyncIOScheduler()
 last_fetch_time: Optional[datetime] = None
 THAI_TZ = timezone(timedelta(hours=7))
+_fetch_lock = asyncio.Lock()   # prevent concurrent fetch races
 
 
 # ─── Pydantic Models ──────────────────────────────────────────
@@ -90,6 +93,16 @@ def to_thai_iso(dt: Optional[datetime]) -> Optional[str]:
 # ─── Core Process ─────────────────────────────────────────────
 
 async def process_and_notify(
+    db: Session,
+    from_dt: Optional[datetime] = None,
+    to_dt: Optional[datetime] = None,
+) -> dict:
+    """Serialise all fetch calls — prevents duplicate notifications from concurrent scheduler + manual fetch."""
+    async with _fetch_lock:
+        return await _process_and_notify(db, from_dt, to_dt)
+
+
+async def _process_and_notify(
     db: Session,
     from_dt: Optional[datetime] = None,
     to_dt: Optional[datetime] = None,
@@ -191,9 +204,15 @@ async def process_and_notify(
             llm_used=llm_used,
             llm_fallback=llm_fallback,
         )
-        db.add(news)
-        db.commit()
-        db.refresh(news)
+        try:
+            db.add(news)
+            db.commit()
+            db.refresh(news)
+        except IntegrityError:
+            # Duplicate URL inserted by a concurrent session (should not happen
+            # after the lock, but guards against any edge case).
+            db.rollback()
+            continue
         new_count += 1
 
         if alert_msg and category in ("danger", "peace"):
