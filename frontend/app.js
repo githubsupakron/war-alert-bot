@@ -340,6 +340,28 @@ function goPage(p) {
   document.getElementById('news-list').scrollTop = 0;
 }
 
+function buildPager(curPage, totalPages) {
+  const pages = new Set();
+  for (let i = 1; i <= Math.min(2, totalPages); i++) pages.add(i);
+  for (let i = Math.max(1, totalPages - 1); i <= totalPages; i++) pages.add(i);
+  for (let i = Math.max(1, curPage - 1); i <= Math.min(totalPages, curPage + 1); i++) pages.add(i);
+
+  const sorted = [...pages].sort((a, b) => a - b);
+  let btns = '';
+  let prev = 0;
+  for (const p of sorted) {
+    if (p - prev > 1) btns += `<span class="pager-ellipsis">…</span>`;
+    btns += `<button class="pager-page-btn${p === curPage ? ' active' : ''}" onclick="goPage(${p})">${p}</button>`;
+    prev = p;
+  }
+
+  return `<div class="pager">
+    <button class="btn btn-ghost btn-sm pager-nav" onclick="goPage(${curPage - 1})" ${curPage === 1 ? 'disabled' : ''}><i class="fa-solid fa-chevron-left"></i></button>
+    ${btns}
+    <button class="btn btn-ghost btn-sm pager-nav" onclick="goPage(${curPage + 1})" ${curPage === totalPages ? 'disabled' : ''}><i class="fa-solid fa-chevron-right"></i></button>
+  </div>`;
+}
+
 function renderNews() {
   const list = getFilteredNews();
   const total = list.length;
@@ -364,19 +386,7 @@ function renderNews() {
   const pStart = start + 1;
   const pEnd = Math.min(curPage * PAGE_SIZE, total);
 
-  pager.innerHTML = `
-    <div class="pager">
-      <span class="pager-info">${pStart}–${pEnd} / ${total} รายการ</span>
-      <div class="pager-btns">
-        <button class="btn btn-ghost btn-sm" onclick="goPage(${curPage - 1})" ${curPage === 1 ? 'disabled' : ''}>
-          <i class="fa-solid fa-chevron-left"></i>
-        </button>
-        <span class="pager-num">${curPage} / ${totalPages}</span>
-        <button class="btn btn-ghost btn-sm" onclick="goPage(${curPage + 1})" ${curPage === totalPages ? 'disabled' : ''}>
-          <i class="fa-solid fa-chevron-right"></i>
-        </button>
-      </div>
-    </div>`;
+  pager.innerHTML = buildPager(curPage, totalPages);
 
   container.innerHTML = pageItems.map(n => {
     const cat       = n.category || 'neutral';

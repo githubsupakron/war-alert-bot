@@ -197,14 +197,23 @@ body { margin: 0; padding: 0; background-color: var(--dark); color: #fff; font-f
 
 /* Pagination */
 .pager {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
   padding: 10px 16px; border-top: 1px solid rgba(114, 65, 155, 0.2);
   background: rgba(15, 23, 42, 0.5); flex-shrink: 0;
   font-family: ui-monospace, 'Cascadia Code', 'Courier New', monospace; font-size: 13px;
 }
-.pager-info { color: var(--dim); }
-.pager-btns { display: flex; gap: 6px; align-items: center; }
-.pager-num  { color: var(--text); min-width: 52px; text-align: center; }
+.pager-page-btn {
+  min-width: 32px; height: 32px; padding: 0 8px;
+  border: 1px solid rgba(114, 65, 155, 0.3); border-radius: 6px;
+  background: transparent; color: var(--text); cursor: pointer;
+  font-family: inherit; font-size: 13px; transition: all 0.15s;
+}
+.pager-page-btn:hover { background: rgba(114, 65, 155, 0.2); border-color: var(--purple); }
+.pager-page-btn.active {
+  background: var(--purple); border-color: var(--purple); color: white; font-weight: 700;
+}
+.pager-ellipsis { color: var(--dim); padding: 0 4px; line-height: 32px; }
+.pager-nav { flex-shrink: 0; }
 
 /* Empty / Loading */
 .empty { text-align: center; padding: 52px 20px; color: var(--dim); }
