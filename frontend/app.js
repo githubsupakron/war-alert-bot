@@ -1,6 +1,16 @@
 const API = '';
 let allNews = [], curTab = 'all', curPage = 1;
 const PAGE_SIZE = 4;
+let _pollTimer = null;
+
+function syncPolling(autoFetch) {
+  if (autoFetch && !_pollTimer) {
+    _pollTimer = setInterval(() => { loadStatus(); loadNews(); }, 30000);
+  } else if (!autoFetch && _pollTimer) {
+    clearInterval(_pollTimer);
+    _pollTimer = null;
+  }
+}
 
 function togglePanel(hdr) {
   const body = hdr.nextElementSibling;
@@ -164,6 +174,7 @@ async function loadStatus() {
       document.getElementById('toggle-ai-classifier').checked = d.classifier_mode === 'ai';
       updateClassifierModeUI();
     }
+    return d.auto_fetch;
   } catch(e) { console.error('loadStatus:', e); }
 }
 
@@ -202,7 +213,8 @@ async function saveScheduler() {
     } else {
       toast('บันทึกไม่สำเร็จ — ' + r.status, 'err');
     }
-    await loadStatus();
+    const autoFetch = await loadStatus();
+    syncPolling(autoFetch);
   } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
 
   btn.disabled = false;
@@ -530,5 +542,4 @@ async function deleteAll() {
 document.getElementById('iv-value').addEventListener('input',  updateIvHint);
 document.getElementById('iv-unit').addEventListener('change',  updateIvHint);
 
-Promise.all([loadStatus(), loadSettings(), loadNews()]);
-setInterval(() => { loadStatus(); loadNews(); }, 30000);
+Promise.all([loadStatus().then(syncPolling), loadSettings(), loadNews()]);
