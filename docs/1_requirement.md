@@ -9,7 +9,8 @@ War Alert Bot monitors geopolitical conflict news, classifies each item as dange
 The system provides:
 
 - News collection from NewsAPI.org.
-- Keyword-based classification for danger and peace events.
+- Keyword-based first-pass classification for danger and peace events.
+- Planned hybrid AI-assisted classification for ambiguous or high-signal danger/peace candidates.
 - Thai translation of English news titles.
 - Bilingual alert message generation.
 - SQLite storage for fetched news and delivery status.
@@ -51,10 +52,13 @@ The Facebook audience sees selected or automated Page posts containing the alert
 ### FR-3 News Classification
 
 - The system shall classify fetched articles into `danger`, `peace`, or `neutral`.
-- The current classification method shall use keyword matching in `backend/analyzer.py`.
-- Danger classification shall be selected when at least one danger keyword is present and danger score is greater than or equal to peace score.
-- Peace classification shall be selected when at least one peace keyword is present and peace score is greater than danger score.
-- Neutral classification shall be selected when neither danger nor peace rules match.
+- The current implementation shall use keyword matching in `backend/analyzer.py`.
+- The planned classifier enhancement shall use hybrid mode: keyword/filter rules first, then LLM review only for ambiguous items or items that appear to match `danger` or `peace`.
+- Keyword rules shall support negative rules, weighted danger/peace keywords, and a confidence score.
+- The keyword/filter pass shall remain fast, deterministic, and usable when the LLM is disabled or unavailable.
+- The LLM shall return structured JSON with `category`, `confidence`, `reason`, and `market_impact`.
+- If LLM parsing, timeout, quota, or provider errors occur, the system shall fall back to the keyword/filter result.
+- Neutral classification shall be selected when neither keyword/filter nor LLM confidence supports `danger` or `peace`.
 
 ### FR-4 Translation
 
@@ -160,7 +164,8 @@ The system shall store settings as key-value records.
 
 ### Cost
 
-- The classification process shall remain free and shall not depend on paid AI APIs.
+- The keyword/filter pass shall remain free and shall not depend on paid AI APIs.
+- LLM-assisted classification shall be optional, configurable, and used only for ambiguous or high-signal items to control cost.
 - The current system shall use NewsAPI free-tier-compatible queries.
 
 ### Maintainability
@@ -184,7 +189,8 @@ The system shall store settings as key-value records.
 - The primary timezone for display is Asia/Bangkok.
 - The default backend port is `8000`.
 - SQLite is acceptable for the current single-instance deployment.
-- Keyword classification accuracy is acceptable for a lightweight hackathon product.
+- Keyword classification is acceptable as a fallback path, but hybrid mode is expected to reduce false positives and false negatives.
+- LLM output is treated as probabilistic and must include confidence and reason fields for admin review.
 
 ## 9. Out of Scope
 
@@ -194,6 +200,4 @@ The system shall store settings as key-value records.
 - Advanced financial forecasting.
 - Guaranteed trading advice.
 - Full multilingual article translation beyond title translation.
-- AI-based classification.
 - Push delivery to channels other than LINE and Facebook.
-

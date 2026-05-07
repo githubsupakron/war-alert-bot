@@ -30,7 +30,7 @@ No test suite is currently configured.
 
 **Data flow:**
 1. `news_fetcher.py` — fetches articles from NewsAPI.org by keyword
-2. `analyzer.py` — keyword-based classification into `danger` / `peace` / `neutral`; builds bilingual alert messages
+2. `analyzer.py` — currently keyword-based classification into `danger` / `peace` / `neutral`; planned hybrid classifier adds weighted keywords, negative rules, confidence, and optional LLM JSON review for ambiguous or danger/peace candidates
 3. `translator.py` — translates English headlines to Thai via unofficial Google Translate (no auth required)
 4. `line_notifier.py` / `facebook_notifier.py` — sends formatted alerts to LINE Messaging API and Facebook Graph API
 5. `models.py` — SQLAlchemy ORM for `news_items` and `settings` tables; tracks what was already sent to avoid duplicates
@@ -42,7 +42,7 @@ No test suite is currently configured.
 
 ## Key Design Decisions
 
-- **No AI API:** Classification is pure keyword matching (removed Anthropic API to eliminate cost). Keywords are configurable via admin UI and stored in the `settings` table.
+- **Classifier status:** Runtime code is still keyword matching. The docs now define a planned hybrid classifier using CodeSmart Chat Completions: keyword/filter first, optional LLM only for ambiguous or danger/peace candidates, strict JSON output, and keyword fallback on LLM failure.
 - **No hot reload** in production (`reload=False`); restart the server after backend changes.
 - **Auto-migration:** On startup, code safely adds missing columns (`title_th`, `facebook_sent`) via raw SQL — does not use Alembic.
 - **Thai timezone:** Published times are offset +7 hours from UTC before display.

@@ -50,10 +50,13 @@ war-alert-bot/
 | `LINE_USER_ID` | Yes for LINE push | `line_notifier.py` | Target recipient user ID. |
 | `FB_PAGE_ID` | Yes for Facebook | `facebook_notifier.py` | Facebook Page ID. |
 | `FB_PAGE_ACCESS_TOKEN` | Yes for Facebook | `facebook_notifier.py` | Page access token. |
+| `CODESMART_API_KEY` | Optional for hybrid classifier | Planned analyzer integration | CodeSmart API bearer token. |
+| `CODESMART_MODEL` | Optional for hybrid classifier | Planned analyzer integration | CodeSmart chat model name, default `claude-sonnet-4.6`. |
+| `CODESMART_API_URL` | Optional for hybrid classifier | Planned analyzer integration | CodeSmart chat completions URL, default `https://api.codesmart.app/v1/chat/completions`. |
 | `ADMIN_SECRET` | Present but not enforced | Environment | Intended admin secret. |
 | `PORT` | Optional | `main.py`, scripts | Server port, default `8000`. |
 
-Security note: example files should contain placeholders only. Tokens that have been shared or committed should be rotated.
+Security note: example files should contain placeholders only. Tokens that have been shared or committed should be rotated. Do not commit real CodeSmart bearer tokens.
 
 ## 4. Application Startup
 
@@ -132,7 +135,7 @@ Algorithm:
 4. For each article:
    - Check duplicate by URL.
    - For duplicates, retry enabled unsent channels if the item is danger or peace.
-   - For new articles, classify with `analyze_news`.
+   - For new articles, classify with `analyze_news`. In planned hybrid mode, run keyword/filter first and call the LLM only for ambiguous or danger/peace candidates.
    - Parse publish timestamp.
    - Convert publish timestamp to Thailand time for alert display.
    - Translate title to Thai.
@@ -193,7 +196,7 @@ Function:
 analyze_news(title: str, description: str) -> dict
 ```
 
-Rules:
+Current keyword-only rules:
 
 - Lowercase concatenated title and description.
 - Count keyword presence from `DANGER_KEYWORDS`.
@@ -212,6 +215,105 @@ Output:
 ```
 
 Important implementation note: settings endpoint stores `danger_keywords` and `peace_keywords`, but the analyzer currently uses module-level arrays. Runtime keyword customization for classification is not fully implemented.
+
+Planned hybrid rules:
+
+1. Run deterministic keyword/filter scoring first.
+2. Apply weighted danger and peace keywords instead of raw counts.
+3. Apply negative rules to reduce false positives.
+4. Compute a confidence score from keyword weights, negative matches, and danger/peace score separation.
+5. Send to LLM only when the first pass is ambiguous or when it classifies the item as `danger` or `peace`.
+6. Require strict JSON from the LLM.
+7. If LLM execution or parsing fails, return the keyword/filter result.
+
+Planned keyword/filter output:
+
+```json
+{
+  "category": "danger | peace | neutral",
+  "confidence": 0.72,
+  "reason": "Matched weighted danger keywords with no blocking negative rule.",
+  "market_impact": "string",
+  "matched_keywords": ["missile", "airstrike"],
+  "negative_matches": []
+}
+```
+
+Required LLM JSON output:
+
+```json
+{
+  "category": "danger | peace | neutral",
+  "confidence": 0.0,
+  "reason": "short explanation for the classification",
+  "market_impact": "short market-impact summary"
+}
+```
+
+LLM output constraints:
+
+- `category` must be one of `danger`, `peace`, or `neutral`.
+- `confidence` must be a number from `0.0` to `1.0`.
+- `reason` must be concise and based only on the supplied title, description, source, and publish time.
+- `market_impact` must remain informational and avoid trading advice.
+
+Recommended hybrid merge behavior:
+
+- Use the LLM result only when JSON is valid and confidence is above the configured threshold.
+- Prefer `neutral` when keyword/filter and LLM disagree with low confidence.
+- Preserve keyword fallback context for auditability.
+- Store or log whether LLM review was used and whether fallback was required.
+
+### 6.3.1 CodeSmart LLM Integration
+
+Hybrid classifier LLM review shall use CodeSmart Chat Completions.
+
+Endpoint:
+
+```text
+POST https://api.codesmart.app/v1/chat/completions
+```
+
+Headers:
+
+```text
+Content-Type: application/json
+Authorization: Bearer ${CODESMART_API_KEY}
+```
+
+Request body shape:
+
+```json
+{
+  "model": "claude-sonnet-4.6",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You classify geopolitical news for a war-alert system. Return JSON only."
+    },
+    {
+      "role": "user",
+      "content": "Title: ...\nDescription: ...\nSource: ...\nPublished at: ..."
+    }
+  ],
+  "stream": false
+}
+```
+
+Classifier prompt requirements:
+
+- The system message shall instruct the model to return JSON only.
+- The user message shall include article title, description, source, publish time, keyword/filter category, keyword confidence, matched keywords, negative matches, and candidate market-impact text.
+- The model shall not add markdown fences, prose, or fields outside the expected JSON object.
+- The model shall not give trading advice; `market_impact` must be informational.
+
+Expected response handling:
+
+- Read the assistant message content from the CodeSmart chat completion response.
+- Parse the content as JSON.
+- Validate `category`, `confidence`, `reason`, and `market_impact`.
+- If the HTTP request fails, the response is non-2xx, the content is missing, JSON parsing fails, or validation fails, fall back to the keyword/filter result.
+- Use `stream: false`; streaming is not required for classifier review.
 
 ### 6.4 Alert Message Generation
 
@@ -402,9 +504,14 @@ Request body:
   "keywords": "Iran attack,Israel strike,war",
   "danger_keywords": "attack,strike,missile",
   "peace_keywords": "ceasefire,peace talks",
+  "negative_keywords": "movie,game,anniversary,historical",
+  "classifier_mode": "hybrid",
+  "llm_enabled": false,
   "max_news_age_hours": 6
 }
 ```
+
+Current implementation accepts `keywords`, `danger_keywords`, `peace_keywords`, and `max_news_age_hours`. The additional classifier fields are planned for the hybrid classifier implementation.
 
 ### 7.9 `PUT /api/settings/channels`
 
@@ -516,7 +623,8 @@ Set production environment variables in Railway project settings.
 
 No automated test suite is currently present. Recommended tests:
 
-- Unit tests for `analyze_news` scoring rules.
+- Unit tests for `analyze_news` keyword scoring rules, weighted scores, negative rules, and confidence thresholds.
+- Unit tests for LLM JSON validation and keyword fallback behavior.
 - Unit tests for `build_alert_message` output conditions.
 - Unit tests for `parse_published_at`.
 - API tests for scheduler validation and CRUD routes.
@@ -532,4 +640,3 @@ No automated test suite is currently present. Recommended tests:
 - In-process scheduler can duplicate jobs if the app runs with multiple workers or replicas.
 - No structured logging or monitoring.
 - No automated migration framework.
-

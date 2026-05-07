@@ -4,7 +4,7 @@
 
 War Alert Bot gives market-aware users a fast operational view of conflict-related news and turns selected events into actionable alert messages. The product focuses on geopolitical risk events that can move gold, equities, USD, and broader risk appetite.
 
-The current implementation is designed for a small team or individual operator who wants to monitor war-related news, classify it quickly, and distribute alerts through LINE and Facebook without paying for an AI analysis service.
+The current implementation is designed for a small team or individual operator who wants to monitor war-related news, classify it quickly, and distribute alerts through LINE and Facebook. The next classifier requirement keeps the low-cost keyword workflow but adds optional LLM review for ambiguous or high-signal items where context matters.
 
 ## 2. Business Problem
 
@@ -20,7 +20,7 @@ Geopolitical events can affect markets quickly, but monitoring multiple news sou
 
 - Reduce the time from news publication to operator awareness.
 - Support Thai-language consumption by translating article titles.
-- Lower operating cost by using keyword analysis instead of paid AI APIs.
+- Lower operating cost by using keyword analysis as the default filter and limiting paid or rate-limited LLM calls to ambiguous or high-signal items.
 - Give the admin control over automatic and manual monitoring.
 - Support multi-channel publishing through LINE and Facebook.
 - Maintain a searchable history of fetched and sent news.
@@ -48,7 +48,7 @@ The development team maintains the FastAPI backend, static frontend, integration
 War Alert Bot provides a low-cost market intelligence workflow:
 
 - Automatic news discovery.
-- Simple explainable classification.
+- Explainable hybrid classification with keyword evidence, confidence, and LLM reasons when used.
 - Thai-first alert output.
 - Direct LINE delivery.
 - Optional Facebook Page publishing.
@@ -62,7 +62,7 @@ The business can monitor configured conflict, attack, military, ceasefire, and n
 
 ### Alert Categorization
 
-The business can categorize events into danger, peace, or neutral so the operator can quickly decide what matters.
+The business can categorize events into danger, peace, or neutral so the operator can quickly decide what matters. Hybrid mode should use keyword/filter rules first, then LLM review only when the first pass is ambiguous or strongly indicates danger or peace.
 
 ### Market Framing
 
@@ -113,7 +113,7 @@ The admin should be able to operate the product from a single dashboard without 
 
 ### Cost Control
 
-The product should avoid paid analysis APIs in its current form. The current keyword matching approach is a business constraint, not just a technical choice.
+The product should keep keyword/filter classification as the baseline. LLM classification should be optional, rate-limited by design, and used only when it can reduce false positives or false negatives enough to justify the cost.
 
 ### Deployment
 
@@ -132,6 +132,8 @@ The current product keeps news records indefinitely until the admin deletes them
 ### Classification Accuracy
 
 Keyword matching can misclassify context. For example, an article mentioning both attack and ceasefire may be classified based on simple keyword counts.
+
+Hybrid classification adds LLM dependency risk. The system must handle provider timeout, invalid JSON, quota failure, and inconsistent answers by falling back to deterministic keyword/filter results.
 
 ### Source Dependency
 
@@ -154,9 +156,8 @@ Market-impact language should be treated as informational, not financial advice.
 - Add admin authentication.
 - Add follower subscriptions and recipient groups.
 - Add Telegram, Discord, email, or web push channels.
-- Add confidence scoring and manual approval workflow.
+- Add hybrid AI-assisted classification with negative rules, weighted keywords, confidence scoring, and manual approval workflow.
 - Add charts for alert volume and channel performance.
 - Add source allowlist or blocklist.
 - Add richer Thai summaries beyond title translation.
-- Add AI analysis as an optional premium mode if cost becomes acceptable.
-
+- Add quality reporting so the team can compare keyword and hybrid classifier performance over time.

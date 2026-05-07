@@ -182,7 +182,7 @@ body { margin: 0; padding: 0; background-color: var(--dark); color: #fff; font-f
   font-family: ui-monospace, 'Cascadia Code', 'Courier New', monospace; font-size: 13px;
   line-height: 1.75; white-space: pre-wrap;
   max-height: 180px; overflow-y: auto;
-  margin: 4px 0 6px; color: #cbd5e1; display: none;
+  margin: 4px 0 6px; color: #cbd5e1; display: block;
 }
 .apreview::-webkit-scrollbar { width: 3px; }
 .apreview::-webkit-scrollbar-thumb { background: rgba(114, 65, 155, 0.3); }
@@ -251,6 +251,17 @@ body { margin: 0; padding: 0; background-color: var(--dark); color: #fff; font-f
 .trow:last-child { border-bottom: none; }
 .tlabel { font-size: 14px; font-weight: 600; color: #e2e8f0; }
 .tdesc  { font-size: 12px; color: var(--dim); margin-top: 2px; }
+.classifier-row { margin-bottom: 12px; }
+.manual-classifier-field {
+  transition: opacity 0.2s;
+}
+.manual-classifier-field.is-disabled {
+  opacity: 0.45;
+}
+.manual-classifier-field textarea:disabled {
+  cursor: not-allowed;
+  background: rgba(15, 23, 42, 0.45);
+}
 
 /* Page layout */
 .wrap   { max-width: 1440px; margin: 0 auto; padding: 0 16px; }

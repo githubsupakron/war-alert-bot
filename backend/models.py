@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Text, text
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Float, Text, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
@@ -25,6 +25,12 @@ class NewsItem(Base):
     line_sent     = Column(Boolean, default=False)
     facebook_sent = Column(Boolean, default=False)        # Facebook page post
     created_at    = Column(DateTime, default=datetime.utcnow)
+
+    # Classifier audit fields
+    classification_confidence = Column(Float, default=0.0)
+    classification_reason     = Column(Text, default="")
+    llm_used                  = Column(Boolean, default=False)
+    llm_fallback              = Column(Boolean, default=False)
 
 
 class Setting(Base):
@@ -59,6 +65,10 @@ def init_db():
     try:
         _migrate_column(db, "ALTER TABLE news_items ADD COLUMN title_th TEXT")
         _migrate_column(db, "ALTER TABLE news_items ADD COLUMN facebook_sent BOOLEAN DEFAULT 0")
+        _migrate_column(db, "ALTER TABLE news_items ADD COLUMN classification_confidence REAL DEFAULT 0.0")
+        _migrate_column(db, "ALTER TABLE news_items ADD COLUMN classification_reason TEXT DEFAULT ''")
+        _migrate_column(db, "ALTER TABLE news_items ADD COLUMN llm_used BOOLEAN DEFAULT 0")
+        _migrate_column(db, "ALTER TABLE news_items ADD COLUMN llm_fallback BOOLEAN DEFAULT 0")
     finally:
         db.close()
 
@@ -76,6 +86,9 @@ def init_db():
             # Alert channels (LINE on by default, Facebook off until configured)
             "line_enabled":          "true",
             "facebook_enabled":      "false",
+            # Classifier
+            "classifier_mode":            "keyword",  # "keyword" or "ai"
+            "negative_keywords":          "",
         }
         for key, value in defaults.items():
             if not db.query(Setting).filter(Setting.key == key).first():

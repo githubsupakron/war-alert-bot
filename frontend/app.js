@@ -79,6 +79,24 @@ function updateChannelBar(lineOn, fbOn) {
   }
 }
 
+function updateClassifierModeUI() {
+  const aiOn = document.getElementById('toggle-ai-classifier')?.checked;
+  const desc = document.getElementById('classifier-mode-desc');
+  const fields = document.querySelectorAll('.manual-classifier-field textarea');
+
+  if (desc) {
+    desc.textContent = aiOn
+      ? 'AI mode: CodeSmart classifies danger / peace / neutral'
+      : 'Manual mode: danger and peace keywords classify the feed';
+  }
+  fields.forEach(field => {
+    field.disabled = aiOn;
+  });
+  document.querySelectorAll('.manual-classifier-field').forEach(row => {
+    row.classList.toggle('is-disabled', !!aiOn);
+  });
+}
+
 // ── LINE Preview toggle ─────────────────────────────────────
 function togglePreview(id) {
   const box = document.getElementById(`prev-${id}`);
@@ -136,6 +154,10 @@ async function loadStatus() {
     if (document.activeElement.id !== 'toggle-fb')
       document.getElementById('toggle-fb').checked = !!d.facebook_enabled;
     updateChannelBar(d.line_enabled !== false, !!d.facebook_enabled);
+    if (document.activeElement.id !== 'toggle-ai-classifier' && d.classifier_mode) {
+      document.getElementById('toggle-ai-classifier').checked = d.classifier_mode === 'ai';
+      updateClassifierModeUI();
+    }
   } catch(e) { console.error('loadStatus:', e); }
 }
 
@@ -147,6 +169,8 @@ async function loadSettings() {
     document.getElementById('kw-danger').value = d.danger_keywords || '';
     document.getElementById('kw-peace').value  = d.peace_keywords || '';
     document.getElementById('kw-hours').value  = d.max_news_age_hours || 6;
+    document.getElementById('toggle-ai-classifier').checked = d.classifier_mode === 'ai';
+    updateClassifierModeUI();
   } catch(e) {}
 }
 
@@ -194,9 +218,16 @@ async function saveKeywords() {
         danger_keywords: document.getElementById('kw-danger').value,
         peace_keywords:  document.getElementById('kw-peace').value,
         max_news_age_hours: parseInt(document.getElementById('kw-hours').value) || 6,
+        classifier_mode: document.getElementById('toggle-ai-classifier').checked ? 'ai' : 'keyword',
       }),
     });
-    r.ok ? toast('บันทึก Keywords สำเร็จ ✅') : toast('บันทึกไม่สำเร็จ', 'err');
+    if (r.ok) {
+      const aiOn = document.getElementById('toggle-ai-classifier').checked;
+      toast(aiOn ? 'บันทึกแล้ว: ใช้ AI classify' : 'บันทึกแล้ว: ใช้ Manual keywords');
+      await loadStatus();
+    } else {
+      toast('บันทึกไม่สำเร็จ', 'err');
+    }
   } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
 
   btn.disabled = false;
@@ -225,9 +256,10 @@ async function manualFetch() {
       wrap.classList.remove('loading');
       return;
     }
+    const toLocalISO = s => new Date(new Date(s).getTime() - new Date(s).getTimezoneOffset() * 60000).toISOString();
     body = {
-      from_datetime: new Date(f).toISOString(),
-      to_datetime:   new Date(t).toISOString(),
+      from_datetime: toLocalISO(f),
+      to_datetime:   toLocalISO(t),
     };
   }
 
@@ -365,7 +397,7 @@ function renderNews() {
     const transBadge = hasTH           ? '<span class="badge b-trans">🇹🇭 แปลแล้ว</span>'                                  : '';
 
     const previewBlock = n.alert_message ? `
-      <button class="preview-toggle" id="pbtn-${n.id}" onclick="togglePreview(${n.id})">📋 ดู LINE Preview ▼</button>
+      <button class="preview-toggle" id="pbtn-${n.id}" onclick="togglePreview(${n.id})">📋 ซ่อน LINE Preview ▲</button>
       <div class="apreview" id="prev-${n.id}">${esc(n.alert_message)}</div>
     ` : '';
 

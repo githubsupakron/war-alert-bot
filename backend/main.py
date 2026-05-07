@@ -16,7 +16,8 @@ load_dotenv()
 
 from models import NewsItem, Setting, get_db, init_db, SessionLocal
 from news_fetcher import fetch_news_from_api, parse_published_at
-from analyzer import analyze_news, build_alert_message
+from analyzer import keyword_classify, build_alert_message
+from codesmart_client import classify_with_codesmart
 from line_notifier import send_line_message
 from facebook_notifier import post_to_facebook_page
 from translator import translate_to_thai
@@ -41,6 +42,9 @@ class KeywordSettings(BaseModel):
     danger_keywords: str
     peace_keywords: str
     max_news_age_hours: int
+    # Classifier setting is optional so existing frontend calls keep working.
+    negative_keywords: Optional[str]          = None
+    classifier_mode: Optional[str]            = None   # "keyword" or "ai"
 
 class ChannelSettings(BaseModel):
     line_enabled: bool
@@ -85,10 +89,15 @@ async def process_and_notify(
     global last_fetch_time
     last_fetch_time = datetime.utcnow()
 
-    keywords   = get_setting(db, "keywords", "Iran attack,Israel strike,war")
-    hours_back = int(get_setting(db, "max_news_age_hours", "6"))
-    line_on    = get_setting(db, "line_enabled", "true") == "true"
-    fb_on      = get_setting(db, "facebook_enabled", "false") == "true"
+    keywords        = get_setting(db, "keywords", "Iran attack,Israel strike,war")
+    hours_back      = int(get_setting(db, "max_news_age_hours", "6"))
+    line_on         = get_setting(db, "line_enabled", "true") == "true"
+    fb_on           = get_setting(db, "facebook_enabled", "false") == "true"
+    danger_kw_csv   = get_setting(db, "danger_keywords", "")
+    peace_kw_csv    = get_setting(db, "peace_keywords", "")
+    negative_kw_csv = get_setting(db, "negative_keywords", "")
+    classifier_mode = get_setting(db, "classifier_mode", "keyword")
+    use_ai          = classifier_mode == "ai"
 
     articles = await fetch_news_from_api(
         keywords=keywords,
@@ -116,14 +125,38 @@ async def process_and_notify(
                         sent_fb += 1
             continue
 
-        analysis  = analyze_news(article["title"], article["description"])
-        category  = analysis.get("category", "neutral")
-        pub_dt    = parse_published_at(article["published_at"])
-        thai_dt   = pub_dt + timedelta(hours=7)
-        pub_str   = thai_dt.strftime("%Y-%m-%d %H:%M น. (เวลาไทย)")
-        title_th  = await translate_to_thai(article["title"])
+        llm_used     = False
+        llm_fallback = False
+        if use_ai:
+            llm_result = await classify_with_codesmart(article)
+            if llm_result is not None:
+                llm_used     = True
+                final_result = llm_result
+            else:
+                llm_fallback = True
+                final_result = {
+                    "category": "neutral",
+                    "confidence": 0.0,
+                    "reason": "CodeSmart AI classifier unavailable",
+                    "market_impact": "",
+                }
+        else:
+            final_result = keyword_classify(article["title"], article["description"],
+                                            danger_kw_csv, peace_kw_csv, negative_kw_csv)
+
+        category      = final_result.get("category", "neutral")
+        confidence    = final_result.get("confidence", 0.0)
+        reason        = final_result.get("reason", "")
+        market_impact = final_result.get("market_impact", "")
+
+        pub_dt   = parse_published_at(article["published_at"])
+        thai_dt  = pub_dt + timedelta(hours=7)
+        pub_str  = thai_dt.strftime("%Y-%m-%d %H:%M น. (เวลาไทย)")
+        title_th = await translate_to_thai(article["title"])
         alert_msg = build_alert_message(
-            article["title"], title_th, article["url"], analysis, pub_str
+            article["title"], title_th, article["url"],
+            {"category": category, "market_impact": market_impact},
+            pub_str,
         )
 
         news = NewsItem(
@@ -137,6 +170,10 @@ async def process_and_notify(
             alert_message=alert_msg or "",
             line_sent=False,
             facebook_sent=False,
+            classification_confidence=confidence,
+            classification_reason=(reason or "")[:500],
+            llm_used=llm_used,
+            llm_fallback=llm_fallback,
         )
         db.add(news)
         db.commit()
@@ -229,6 +266,8 @@ async def get_status(db: Session = Depends(get_db)):
         "scheduler_jobs":    len(scheduler.get_jobs()),
         "line_enabled":      get_setting(db, "line_enabled", "true") == "true",
         "facebook_enabled":  get_setting(db, "facebook_enabled", "false") == "true",
+        "classifier_mode":   get_setting(db, "classifier_mode", "keyword"),
+        "codesmart_ready":   bool(os.getenv("CODESMART_API_KEY", "")),
     }
 
 
@@ -251,18 +290,22 @@ async def get_news(
     news = q.limit(limit).all()
     return [
         {
-            "id":            n.id,
-            "title":         n.title,
-            "title_th":      n.title_th or "",
-            "description":   n.description,
-            "url":           n.url,
-            "source":        n.source,
-            "published_at":  n.published_at.isoformat() if n.published_at else None,
-            "category":      n.category,
-            "alert_message": n.alert_message,
-            "line_sent":     n.line_sent,
-            "facebook_sent": n.facebook_sent or False,
-            "created_at":    n.created_at.isoformat() if n.created_at else None,
+            "id":                        n.id,
+            "title":                     n.title,
+            "title_th":                  n.title_th or "",
+            "description":               n.description,
+            "url":                       n.url,
+            "source":                    n.source,
+            "published_at":              n.published_at.isoformat() if n.published_at else None,
+            "category":                  n.category,
+            "alert_message":             n.alert_message,
+            "line_sent":                 n.line_sent,
+            "facebook_sent":             n.facebook_sent or False,
+            "created_at":                n.created_at.isoformat() if n.created_at else None,
+            "classification_confidence": n.classification_confidence or 0.0,
+            "classification_reason":     n.classification_reason or "",
+            "llm_used":                  n.llm_used or False,
+            "llm_fallback":              n.llm_fallback or False,
         }
         for n in news
     ]
@@ -332,6 +375,12 @@ async def update_keyword_settings(body: KeywordSettings, db: Session = Depends(g
     set_setting(db, "danger_keywords",    body.danger_keywords)
     set_setting(db, "peace_keywords",     body.peace_keywords)
     set_setting(db, "max_news_age_hours", str(body.max_news_age_hours))
+    if body.negative_keywords is not None:
+        set_setting(db, "negative_keywords", body.negative_keywords)
+    if body.classifier_mode is not None:
+        if body.classifier_mode not in ("keyword", "ai"):
+            raise HTTPException(status_code=400, detail="classifier_mode must be 'keyword' or 'ai'")
+        set_setting(db, "classifier_mode", body.classifier_mode)
     db.commit()
     return {"status": "updated"}
 

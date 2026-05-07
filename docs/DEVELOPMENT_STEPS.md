@@ -1,7 +1,6 @@
 # 📋 WAR ALERT BOT — Development Steps & Prompt History
 **สำหรับทีม และสำหรับ AI (Claude) จดจำสิ่งที่ทำไปแล้ว**
-**Last Updated:** 2026-05-05
-**Version:** 2.2 (Free tier — Bilingual TH/EN, Facebook Page Integration, Channel Toggles)
+**Last Updated:** 2026-05-07
 
 ---
 
@@ -25,6 +24,7 @@ war-alert-bot/
 │   ├── models.py            ✅ SQLite + title_th + facebook_sent + auto migration
 │   ├── news_fetcher.py      ✅ ดึงข่าวจาก NewsAPI.org + date range
 │   ├── analyzer.py          ✅ v2.1 — Keyword matching + bilingual alert message
+│   │                         📝 Planned — Hybrid keyword + LLM classifier
 │   ├── translator.py        ✅ Auto-translate EN→TH (Google Translate, ฟรี)
 │   ├── line_notifier.py     ✅ LINE Messaging API push/broadcast
 │   ├── facebook_notifier.py ✅ NEW — Facebook Page post (Graph API v19.0)
@@ -56,6 +56,8 @@ PORT=8000
 ```
 
 > ⚠️ **ไม่ต้องการ ANTHROPIC_API_KEY แล้ว** (ตัดออกใน Prompt 5)
+> 📝 **Planned hybrid classifier:** ถ้าเปิด hybrid classifier จะใช้ CodeSmart API และเพิ่ม env เช่น `CODESMART_API_KEY` / `CODESMART_MODEL` แบบ optional
+> ⚠️ **CodeSmart API key ถูก expose ใน chat** — ควร rotate/reissue key ใหม่ก่อนใช้งานจริง และห้าม commit key จริงลง repo
 > ⚠️ **Facebook credentials ถูก expose ใน chat** — ควร generate Page Access Token ใหม่จาก Graph API Explorer
 
 ---
@@ -246,6 +248,8 @@ PORT=8000
 
 ## 📊 News Classification Logic
 
+### Current v2.2 Keyword Classifier
+
 ```python
 text = title + description (lowercase)
 
@@ -270,6 +274,35 @@ else:
 
 **PEACE_KEYWORDS** (ตัวอย่าง):
 `ceasefire, peace talks, negotiation, truce, treaty, withdraw, de-escalation, หยุดยิง, เจรจา, สันติภาพ`
+
+### Planned Hybrid Classifier
+
+Hybrid mode จะไม่ส่งทุกข่าวเข้า LLM เพราะช้าและมี cost แต่จะใช้ keyword/filter เดิมเป็นด่านแรก:
+
+1. Keyword/filter first pass
+   - ใช้ weighted danger/peace keywords แทนการนับ 1 คำ = 1 คะแนนเสมอ
+   - เพิ่ม negative rules เพื่อลด false positive เช่น historical article, movie/game, quote/speculation, unrelated military terms
+   - คำนวณ `confidence`
+
+2. LLM review เฉพาะข่าวที่ควรตรวจซ้ำ
+   - ข่าว ambiguous เช่น danger score กับ peace score ใกล้กัน
+   - ข่าวที่ keyword/filter เข้าข่าย `danger` หรือ `peace`
+   - ไม่ต้องส่งข่าว neutral ชัดเจนเข้า LLM
+
+3. LLM ต้องตอบ JSON เท่านั้น
+
+```json
+{
+  "category": "danger | peace | neutral",
+  "confidence": 0.0,
+  "reason": "short explanation",
+  "market_impact": "short market-impact summary"
+}
+```
+
+4. Fallback
+   - ถ้า LLM timeout, quota fail, provider error, JSON parse ไม่ได้, หรือ confidence ต่ำ ให้ fallback กลับไปใช้ keyword/filter result
+   - Alert generation ยังทำเฉพาะ `danger` และ `peace`
 
 ---
 
@@ -361,7 +394,8 @@ python main.py
 |-------|-----------|--------|
 | NewsAPI free tier | ข่าวหน่วง 15 นาที | อัพเกรด $449/เดือน หรือใช้ GNews API แทน |
 | LINE free tier | 200 push msg/เดือน | อัพเกรด หรือ filter เฉพาะ danger/peace |
-| Keyword accuracy | ~80-90% | เพิ่ม keyword หรือใช้ AI กลับมา |
+| Keyword accuracy | ~80-90% | Planned hybrid classifier เพิ่ม weighted keywords, negative rules, confidence score, และ LLM เฉพาะข่าว ambiguous/danger/peace |
+| LLM dependency | timeout/quota/JSON invalid | fallback กลับไปใช้ keyword/filter result |
 | Railway free | Sleep เมื่อไม่มี traffic | ใช้ UptimeRobot ping ทุก 5 นาที |
 
 ---
@@ -371,6 +405,7 @@ python main.py
 - [ ] เพิ่ม GNews API หรือ Google News RSS (ฟรีกว่า)
 - [ ] Telegram Bot แทน/เพิ่มเติมจาก LINE
 - [ ] เพิ่ม keyword สำหรับ Israel-Hamas, Russia-Ukraine
+- [ ] Implement hybrid classifier: negative rules, weighted keywords, confidence score, LLM JSON review, fallback
 - [ ] Dashboard แสดง chart สถิติข่าวรายวัน
 - [ ] Email alert เพิ่มเติม
 - [ ] Docker compose สำหรับ deploy แบบ self-hosted
@@ -514,6 +549,47 @@ source venv/bin/activate && cd backend && python main.py
 - `DEVELOPMENT_STEPS.md` → อัปเดตเป็น v2.2
 
 > ⚠️ **Security**: FB_PAGE_ACCESS_TOKEN ถูก expose ใน chat — ควร generate ใหม่จาก [Graph API Explorer](https://developers.facebook.com/tools/explorer/)
+
+---
+
+### 🟦 Prompt 10 — Hybrid AI Classifier Requirement Docs
+**ผู้ใช้ต้องการ:**
+- อัปเดต docs จาก requirement ใหม่: classifier เดิมเป็น keyword ล้วนและเสี่ยง false positive/false negative
+- เพิ่ม hybrid mode: keyword/filter ก่อน, LLM เฉพาะข่าว ambiguous หรือข่าวที่เข้าข่าย danger/peace
+- LLM ต้องตอบ JSON: `category`, `confidence`, `reason`, `market_impact`
+- ถ้า LLM fail ให้ fallback กลับ keyword เดิม
+
+**การตัดสินใจ:**
+- ยังไม่แก้ runtime code ใน prompt นี้
+- เพิ่ม requirement สำหรับ negative rules, weighted keywords, confidence score, และ LLM fallback
+
+**ไฟล์ docs ที่เปลี่ยน:**
+- `docs/1_requirement.md`
+- `docs/2_business requirement.md`
+- `docs/3_design document.md`
+- `docs/4_technical specification.md`
+- `docs/DEVELOPMENT_STEPS.md`
+- `CLAUDE.md`
+
+---
+
+### 🟦 Prompt 11 — CodeSmart LLM Provider Spec
+**ผู้ใช้ต้องการ:**
+- อัปเดต technical spec ให้ใช้ CodeSmart API สำหรับ LLM feature
+- Endpoint: `https://api.codesmart.app/v1/chat/completions`
+- Model: `claude-sonnet-4.6`
+- Request ใช้ `messages` และ `stream: false`
+
+**การตัดสินใจ:**
+- ไม่บันทึก bearer token จริงลง repo
+- ใช้ env `CODESMART_API_KEY`, `CODESMART_MODEL`, `CODESMART_API_URL`
+- เพิ่ม security note ให้ rotate/reissue key ที่ถูก expose ใน chat
+- LLM response ยังต้องเป็น JSON และ fallback กลับ keyword/filter เมื่อ request หรือ parsing fail
+
+**ไฟล์ docs ที่เปลี่ยน:**
+- `docs/4_technical specification.md`
+- `docs/DEVELOPMENT_STEPS.md`
+- `CLAUDE.md`
 
 ---
 

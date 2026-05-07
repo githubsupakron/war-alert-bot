@@ -294,16 +294,26 @@
       <span style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">Keywords</span>
     </div>
     <div style="padding:16px;">
+      <div class="trow classifier-row" style="padding-top:0;">
+        <div>
+          <div class="tlabel"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--purple);margin-right:5px;"></i> AI Classification</div>
+          <div class="tdesc" id="classifier-mode-desc">Manual keyword mode</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-ai-classifier" onchange="updateClassifierModeUI()">
+          <span class="tslider"></span>
+        </label>
+      </div>
       <div class="fg">
         <label class="fl"><i class="fa-solid fa-key" style="margin-right:3px;color:var(--purple)"></i> คำค้นหาข่าว (NewsAPI) — คั่น comma</label>
         <textarea class="fta" id="kw-search" placeholder="Iran attack, war, strike..."></textarea>
         <div class="hint">สูงสุด 5 คำ</div>
       </div>
-      <div class="fg">
+      <div class="fg manual-classifier-field">
         <label class="fl" style="color:var(--red);"><i class="fa-solid fa-triangle-exclamation" style="margin-right:3px;"></i> Danger Keywords</label>
         <textarea class="fta" id="kw-danger" placeholder="attack, missile, bomb..." style="border-color:rgba(248,81,73,0.25);"></textarea>
       </div>
-      <div class="fg">
+      <div class="fg manual-classifier-field">
         <label class="fl" style="color:var(--green);"><i class="fa-solid fa-dove" style="margin-right:3px;"></i> Peace Keywords</label>
         <textarea class="fta" id="kw-peace" placeholder="ceasefire, peace talks..." style="border-color:rgba(63,185,80,0.25);"></textarea>
       </div>

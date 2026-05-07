@@ -9,7 +9,7 @@ The design favors simplicity: a single backend process owns API serving, schedul
 ## 2. Design Principles
 
 - Keep operating cost low.
-- Make classification explainable through visible keyword lists.
+- Make classification explainable through visible keyword lists, scores, confidence, and LLM reasoning when used.
 - Keep admin workflows in one screen.
 - Store all fetched items before sending or deleting.
 - Track channel delivery independently for LINE and Facebook.
@@ -23,6 +23,7 @@ flowchart LR
     API["FastAPI Backend"]
     DB["SQLite Database"]
     NewsAPI["NewsAPI.org"]
+    LLM["LLM Provider"]
     Translate["Google Translate Endpoint"]
     LINE["LINE Messaging API"]
     FB["Facebook Graph API"]
@@ -30,6 +31,7 @@ flowchart LR
     Admin <--> API
     API <--> DB
     API --> NewsAPI
+    API --> LLM
     API --> Translate
     API --> LINE
     API --> FB
@@ -44,7 +46,7 @@ The system is organized into these modules:
 | API and orchestration | `backend/main.py` | FastAPI routes, scheduler lifecycle, fetch processing, settings updates. |
 | Data model | `backend/models.py` | SQLAlchemy models, SQLite engine, default settings, lightweight migrations. |
 | News fetching | `backend/news_fetcher.py` | NewsAPI request construction, article parsing, publish date parsing. |
-| Classification | `backend/analyzer.py` | Keyword scoring and alert message construction. |
+| Classification | `backend/analyzer.py` | Keyword scoring, planned hybrid LLM review, and alert message construction. |
 | Translation | `backend/translator.py` | Thai detection and title translation fallback. |
 | LINE delivery | `backend/line_notifier.py` | LINE push and broadcast helpers. |
 | Facebook delivery | `backend/facebook_notifier.py` | Facebook Page feed posting. |
@@ -79,8 +81,12 @@ flowchart TD
     B --> C["Fetch articles from NewsAPI"]
     C --> D{"URL already stored?"}
     D -- Yes --> E["Retry unsent enabled channels when eligible"]
-    D -- No --> F["Analyze title and description"]
-    F --> G["Translate title to Thai"]
+    D -- No --> F["Keyword/filter first pass"]
+    F --> F2{"Ambiguous or danger/peace candidate?"}
+    F2 -- Yes --> F3["LLM JSON review"]
+    F3 --> F4["Merge or fallback to keyword result"]
+    F2 -- No --> F4
+    F4 --> G["Translate title to Thai"]
     G --> H["Build alert message for danger or peace"]
     H --> I["Store news item"]
     I --> J{"Danger or peace?"}
@@ -129,11 +135,30 @@ Stores system configuration as key-value rows.
 | `keywords` | Conflict and peace search terms | NewsAPI search input. |
 | `danger_keywords` | Attack/escalation terms | Admin-editable classifier reference. |
 | `peace_keywords` | Ceasefire/de-escalation terms | Admin-editable classifier reference. |
+| `negative_keywords` | Non-alert context terms | Planned terms that reduce or block false positives. |
+| `classifier_mode` | `keyword` or `hybrid` | Planned switch for deterministic-only or LLM-assisted classification. |
+| `llm_enabled` | `false` by default | Planned toggle for optional LLM review. |
 | `max_news_age_hours` | `6` | Auto-mode lookback period. |
 | `line_enabled` | `true` | Enables LINE delivery during processing. |
 | `facebook_enabled` | `false` | Enables Facebook delivery during processing. |
 
 Note: the current code persists editable danger and peace keyword settings but the classifier uses static keyword arrays in `backend/analyzer.py`. Aligning runtime classifier behavior with saved settings is a future design improvement.
+
+### 6.3 Hybrid Classifier Design
+
+The planned hybrid classifier keeps keyword/filter rules as the first pass and calls an LLM only when an article is ambiguous or appears to be a `danger`/`peace` candidate. This preserves speed and gives the system a deterministic fallback.
+
+Keyword/filter pass:
+
+- Apply weighted danger and peace keywords.
+- Apply negative rules to reduce false positives, such as historical summaries, movie/game references, quoted speculation, or unrelated uses of military terms.
+- Produce `category`, `confidence`, `matched_keywords`, `negative_matches`, and `reason`.
+
+LLM review:
+
+- Trigger only for ambiguous scores or first-pass `danger`/`peace` candidates.
+- Require strict JSON output with `category`, `confidence`, `reason`, and `market_impact`.
+- Treat invalid JSON, timeout, empty response, or provider failure as non-fatal and fall back to keyword/filter output.
 
 ## 7. API Design
 
@@ -203,6 +228,10 @@ The backend sends a query to `https://newsapi.org/v2/everything` with:
 
 The backend uses `https://translate.googleapis.com/translate_a/single` as an unofficial free translation endpoint. Failure falls back to the original title.
 
+### LLM Classification Provider
+
+Hybrid mode may call an LLM provider after keyword/filter pre-screening. The provider must be optional and isolated behind a small interface so the analyzer can fall back to keyword results without blocking the news pipeline.
+
 ### LINE
 
 The backend posts to `https://api.line.me/v2/bot/message/push` with a bearer token and target user ID.
@@ -231,6 +260,7 @@ Railway uses Nixpacks:
 - No admin authentication is currently enforced.
 - SQLite database file location is relative to the backend working directory.
 - Saved classifier keywords are not currently injected into `analyze_news`.
+- Hybrid LLM classification, negative rules, weighted keywords, and confidence storage are documented as planned behavior and are not yet implemented.
 - `env.example` currently contains values that look like real credentials and should be sanitized.
 - The frontend depends on external Google Fonts.
 - The translation endpoint is unofficial and may change behavior.
@@ -241,8 +271,8 @@ Railway uses Nixpacks:
 - Add admin authentication using `ADMIN_SECRET` or another secure method.
 - Sanitize example environment files and rotate exposed tokens.
 - Wire persisted danger and peace keyword settings into the analyzer.
+- Implement hybrid classifier mode with weighted keywords, negative rules, confidence score, strict LLM JSON output, and deterministic fallback.
 - Add tests for classifier, NewsAPI parsing, settings validation, and send retry behavior.
 - Add structured logging.
 - Add database retention or archive policy.
 - Add source filtering and richer admin audit history.
-
