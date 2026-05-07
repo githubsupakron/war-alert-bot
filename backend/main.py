@@ -18,7 +18,7 @@ from models import NewsItem, Setting, get_db, init_db, SessionLocal
 from news_fetcher import fetch_news_from_api, parse_published_at
 from analyzer import keyword_classify, build_alert_message
 from codesmart_client import classify_with_codesmart
-from line_notifier import send_line_message
+from line_notifier import broadcast_line_message
 from facebook_notifier import post_to_facebook_page
 from translator import translate_to_thai
 
@@ -114,7 +114,7 @@ async def process_and_notify(
             # Already in DB — retry sending to channels that haven't received it yet
             if existing.category in ("danger", "peace") and existing.alert_message:
                 if line_on and not existing.line_sent:
-                    if await send_line_message(existing.alert_message):
+                    if await broadcast_line_message(existing.alert_message):
                         existing.line_sent = True
                         db.commit()
                         sent_line += 1
@@ -181,7 +181,7 @@ async def process_and_notify(
         new_count += 1
 
         if alert_msg and category in ("danger", "peace"):
-            if line_on and await send_line_message(alert_msg):
+            if line_on and await broadcast_line_message(alert_msg):
                 news.line_sent = True
                 db.commit()
                 sent_line += 1
@@ -400,7 +400,7 @@ async def update_channel_settings(body: ChannelSettings, db: Session = Depends(g
 @app.post("/api/line/test")
 async def test_line():
     msg = "🤖 War Alert Bot v2.2 — ทดสอบ LINE Alert!\n\nระบบทำงานปกติ ✅\nรองรับข่าว 2 ภาษา + Facebook"
-    success = await send_line_message(msg)
+    success = await broadcast_line_message(msg)
     return {"success": success}
 
 
@@ -411,7 +411,7 @@ async def send_line_for_news(news_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="News not found")
     if not news.alert_message:
         raise HTTPException(status_code=400, detail="No alert message")
-    success = await send_line_message(news.alert_message)
+    success = await broadcast_line_message(news.alert_message)
     if success:
         news.line_sent = True
         db.commit()
