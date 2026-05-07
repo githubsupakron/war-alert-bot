@@ -1,2 +1,5 @@
-backend/__pycache__
-backend/tests/__pycache__
+.coverage
+coverage.xml
+.pytest_cache/
+__pycache__/
+*.py[cod]
