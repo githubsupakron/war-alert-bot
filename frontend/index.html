@@ -121,11 +121,12 @@
 
   <!-- Manual Search -->
   <div class="glass-panel" style="border-radius:16px;overflow:hidden;">
-    <div style="padding:12px 16px;border-bottom:1px solid rgba(114,65,155,0.2);display:flex;align-items:center;gap:8px;">
+    <div class="panel-hdr" style="padding:12px 16px;border-bottom:1px solid rgba(114,65,155,0.2);display:flex;align-items:center;gap:8px;" onclick="togglePanel(this)">
       <i class="fa-solid fa-magnifying-glass" style="color:var(--purple)"></i>
       <span style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">Manual Search</span>
+      <i class="fa-solid fa-chevron-right panel-chevron"></i>
     </div>
-    <div style="padding:16px;">
+    <div class="panel-body" style="display:none;padding:16px;">
       <div class="trow" style="padding-top:0;">
         <div>
           <div class="tlabel">ระบุช่วงวันที่</div>
@@ -167,9 +168,13 @@
   </div>
 
   <!-- Alert Channels -->
-  <div class="panel">
-    <div class="ph"><div class="ptitle">📢 Alert Channels</div></div>
-    <div class="pb">
+  <div class="glass-panel" style="border-radius:16px;overflow:hidden;">
+    <div class="panel-hdr" style="padding:12px 16px;border-bottom:1px solid rgba(114,65,155,0.2);display:flex;align-items:center;gap:8px;" onclick="togglePanel(this)">
+      <i class="fa-solid fa-satellite-dish" style="color:var(--purple)"></i>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">Alert Channels</span>
+      <i class="fa-solid fa-chevron-right panel-chevron"></i>
+    </div>
+    <div class="panel-body" style="display:none;padding:16px;">
 
       <div class="trow" style="padding-top:0">
         <div>
@@ -207,11 +212,12 @@
 
   <!-- Auto Fetch -->
   <div class="glass-panel" style="border-radius:16px;overflow:hidden;">
-    <div style="padding:12px 16px;border-bottom:1px solid rgba(114,65,155,0.2);display:flex;align-items:center;gap:8px;">
+    <div class="panel-hdr" style="padding:12px 16px;border-bottom:1px solid rgba(114,65,155,0.2);display:flex;align-items:center;gap:8px;" onclick="togglePanel(this)">
       <i class="fa-solid fa-robot" style="color:var(--purple)"></i>
       <span style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">Auto Fetch</span>
+      <i class="fa-solid fa-chevron-right panel-chevron"></i>
     </div>
-    <div style="padding:16px;">
+    <div class="panel-body" style="display:none;padding:16px;">
       <div class="trow" style="padding-top:0;">
         <div>
           <div class="tlabel">เปิดใช้งาน Auto</div>
@@ -247,11 +253,12 @@
 
   <!-- Alert Channels -->
   <div class="glass-panel" style="border-radius:16px;overflow:hidden;">
-    <div style="padding:12px 16px;border-bottom:1px solid rgba(114,65,155,0.2);display:flex;align-items:center;gap:8px;">
+    <div class="panel-hdr" style="padding:12px 16px;border-bottom:1px solid rgba(114,65,155,0.2);display:flex;align-items:center;gap:8px;" onclick="togglePanel(this)">
       <i class="fa-solid fa-bullhorn" style="color:var(--purple)"></i>
       <span style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">Alert Channels</span>
+      <i class="fa-solid fa-chevron-right panel-chevron"></i>
     </div>
-    <div style="padding:16px;">
+    <div class="panel-body" style="display:none;padding:16px;">
       <div class="trow" style="padding-top:0;">
         <div>
           <div class="tlabel"><i class="fa-brands fa-line" style="color:var(--green);margin-right:5px;"></i> LINE Alert</div>
@@ -289,11 +296,12 @@
 
   <!-- Keywords -->
   <div class="glass-panel" style="border-radius:16px;overflow:hidden;">
-    <div style="padding:12px 16px;border-bottom:1px solid rgba(114,65,155,0.2);display:flex;align-items:center;gap:8px;">
+    <div class="panel-hdr" style="padding:12px 16px;border-bottom:1px solid rgba(114,65,155,0.2);display:flex;align-items:center;gap:8px;" onclick="togglePanel(this)">
       <i class="fa-solid fa-tags" style="color:var(--purple)"></i>
       <span style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">Keywords</span>
+      <i class="fa-solid fa-chevron-right panel-chevron"></i>
     </div>
-    <div style="padding:16px;">
+    <div class="panel-body" style="display:none;padding:16px;">
       <div class="trow classifier-row" style="padding-top:0;">
         <div>
           <div class="tlabel"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--purple);margin-right:5px;"></i> AI Classification</div>

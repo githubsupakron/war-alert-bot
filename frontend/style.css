@@ -141,7 +141,7 @@ body { margin: 0; padding: 0; background-color: var(--dark); color: #fff; font-f
 
 /* News cards */
 .ncard {
-  flex: 1; min-height: 0; overflow-y: auto;
+  height: max-content;
   padding: 14px 16px;
   border-bottom: 1px solid rgba(114, 65, 155, 0.15);
   position: relative; transition: background 0.12s;
@@ -191,7 +191,7 @@ body { margin: 0; padding: 0; background-color: var(--dark); color: #fff; font-f
 .nact  { display: flex; gap: 4px; flex-wrap: wrap; }
 
 /* News list scroll */
-.nlist { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+.nlist { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
 .nlist::-webkit-scrollbar { width: 4px; }
 .nlist::-webkit-scrollbar-thumb { background: rgba(114, 65, 155, 0.3); border-radius: 2px; }
 
@@ -266,7 +266,7 @@ body { margin: 0; padding: 0; background-color: var(--dark); color: #fff; font-f
 /* Page layout */
 .wrap   { max-width: 1440px; margin: 0 auto; padding: 0 16px; }
 .stats  { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin: 20px 0; }
-.mgrid  { display: grid; grid-template-columns: 330px 1fr; gap: 16px; margin-bottom: 40px; align-items: stretch; }
+.mgrid  { display: grid; grid-template-columns: 330px 1fr; gap: 16px; margin-bottom: 40px; align-items: start; }
 @media (max-width: 900px) { .mgrid { grid-template-columns: 1fr; } }
 
 /* Facebook badge & button */
@@ -302,3 +302,9 @@ body { margin: 0; padding: 0; background-color: var(--dark); color: #fff; font-f
 .ch-badge.off     { color: var(--dim); }
 .ch-badge.on-line { border-color: rgba(63,185,80,0.4); color: var(--green); }
 .ch-badge.on-fb   { border-color: rgba(24,119,242,0.4); color: #1877f2; }
+
+/* Collapsible left panels */
+.panel-hdr { cursor: pointer; user-select: none; }
+.panel-hdr:hover { background: rgba(114,65,155,0.07); }
+.panel-chevron { margin-left: auto; color: var(--dim); font-size: 10px; transition: transform 0.2s; flex-shrink: 0; }
+.panel-hdr.open .panel-chevron { transform: rotate(90deg); }

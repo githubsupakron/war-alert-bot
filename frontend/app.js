@@ -2,6 +2,12 @@ const API = '';
 let allNews = [], curTab = 'all', curPage = 1;
 const PAGE_SIZE = 4;
 
+function togglePanel(hdr) {
+  const body = hdr.nextElementSibling;
+  const isOpen = hdr.classList.toggle('open');
+  body.style.display = isOpen ? '' : 'none';
+}
+
 // ── Utilities ──────────────────────────────────────────────
 function esc(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -397,8 +403,8 @@ function renderNews() {
     const transBadge = hasTH           ? '<span class="badge b-trans">🇹🇭 แปลแล้ว</span>'                                  : '';
 
     const previewBlock = n.alert_message ? `
-      <button class="preview-toggle" id="pbtn-${n.id}" onclick="togglePreview(${n.id})">📋 ซ่อน LINE Preview ▲</button>
-      <div class="apreview" id="prev-${n.id}">${esc(n.alert_message)}</div>
+      <button class="preview-toggle" id="pbtn-${n.id}" onclick="togglePreview(${n.id})">📋 ดู LINE Preview ▼</button>
+      <div class="apreview" id="prev-${n.id}" style="display:none">${esc(n.alert_message)}</div>
     ` : '';
 
     const sendBtn   = (!n.line_sent && n.alert_message)
