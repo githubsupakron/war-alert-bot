@@ -257,3 +257,37 @@ body { margin: 0; padding: 0; background-color: var(--dark); color: #fff; font-f
 .stats  { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin: 20px 0; }
 .mgrid  { display: grid; grid-template-columns: 330px 1fr; gap: 16px; margin-bottom: 40px; align-items: stretch; }
 @media (max-width: 900px) { .mgrid { grid-template-columns: 1fr; } }
+
+/* Facebook badge & button */
+.b-fb   { background: rgba(24,119,242,0.12); color: #1877f2; border: 1px solid rgba(24,119,242,0.3); }
+.btn-fb { background: #1877f2; color: #fff; }
+.btn-fb:hover:not(:disabled) { background: #3390ff; transform: translateY(-1px); }
+
+/* Date preset chips */
+.presets     { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.preset-chip {
+  padding: 3px 11px; border-radius: 20px;
+  border: 1px solid rgba(114,65,155,0.3);
+  background: rgba(15,23,42,0.5); color: var(--dim);
+  font-size: 11px; cursor: pointer;
+  font-family: ui-monospace, 'Cascadia Code', 'Courier New', monospace;
+  transition: all 0.15s;
+}
+.preset-chip:hover { border-color: var(--purple); color: #fff; background: rgba(114,65,155,0.15); }
+
+/* Channel status bar */
+.ch-status {
+  display: flex; gap: 8px; padding: 8px 16px;
+  background: rgba(15,23,42,0.5);
+  border-bottom: 1px solid rgba(114,65,155,0.2);
+  font-size: 11px; font-family: ui-monospace, 'Cascadia Code', 'Courier New', monospace;
+  flex-wrap: wrap; align-items: center; color: var(--dim);
+}
+.ch-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 9px; border-radius: 12px;
+  border: 1px solid rgba(114,65,155,0.2);
+}
+.ch-badge.off     { color: var(--dim); }
+.ch-badge.on-line { border-color: rgba(63,185,80,0.4); color: var(--green); }
+.ch-badge.on-fb   { border-color: rgba(24,119,242,0.4); color: #1877f2; }

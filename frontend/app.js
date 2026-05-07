@@ -39,6 +39,46 @@ function toggleDateRange() {
   }
 }
 
+// ── Date Presets ────────────────────────────────────────────
+function setPreset(preset) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let from = new Date(today), to = new Date(today);
+  if (preset === 'yesterday') {
+    from.setDate(from.getDate() - 1);
+    to.setDate(to.getDate() - 1);
+  } else if (preset === '7d') {
+    from.setDate(from.getDate() - 6);
+  } else if (preset === '30d') {
+    from.setDate(from.getDate() - 29);
+  }
+  to.setHours(23, 59, 0, 0);
+  const toLocalDT = d => new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  document.getElementById('from-dt').value = toLocalDT(from);
+  document.getElementById('to-dt').value   = toLocalDT(to);
+  document.getElementById('use-daterange').checked = true;
+  document.getElementById('daterange-panel').style.display = 'block';
+}
+
+// ── Channel Bar ─────────────────────────────────────────────
+function updateChannelBar(lineOn, fbOn) {
+  const lineBadge = document.getElementById('line-ch-badge');
+  const fbBadge   = document.getElementById('fb-ch-badge');
+  if (lineBadge) lineBadge.style.display = lineOn ? 'flex' : 'none';
+  if (fbBadge)   fbBadge.style.display   = fbOn   ? 'flex' : 'none';
+
+  const lineStatus = document.getElementById('ch-line-badge');
+  const fbStatus   = document.getElementById('ch-fb-badge');
+  if (lineStatus) {
+    lineStatus.className = `ch-badge ${lineOn ? 'on-line' : 'off'}`;
+    lineStatus.innerHTML = `<i class="fa-brands fa-line"></i> LINE ${lineOn ? 'เปิด' : 'ปิด'}`;
+  }
+  if (fbStatus) {
+    fbStatus.className = `ch-badge ${fbOn ? 'on-fb' : 'off'}`;
+    fbStatus.innerHTML = `<i class="fa-brands fa-facebook"></i> Facebook ${fbOn ? 'เปิด' : 'ปิด'}`;
+  }
+}
+
 // ── LINE Preview toggle ─────────────────────────────────────
 function togglePreview(id) {
   const box = document.getElementById(`prev-${id}`);
@@ -54,8 +94,9 @@ async function loadStatus() {
   try {
     const d = await (await fetch(`${API}/api/status`)).json();
 
-    document.getElementById('s-total').textContent  = d.total_news  ?? '—';
-    document.getElementById('s-sent').textContent   = d.sent_news   ?? '—';
+    document.getElementById('s-total').textContent  = d.total_news   ?? '—';
+    document.getElementById('s-sent').textContent   = d.sent_news    ?? '—';
+    document.getElementById('s-fbsent').textContent = d.fb_sent      ?? '—';
     document.getElementById('s-danger').textContent = d.danger_count ?? '—';
     document.getElementById('s-peace').textContent  = d.peace_count  ?? '—';
 
@@ -90,6 +131,11 @@ async function loadStatus() {
       document.getElementById('last-fetch-txt').textContent =
         'ล่าสุด: ' + dt.toLocaleString('th-TH');
     }
+    if (document.activeElement.id !== 'toggle-line')
+      document.getElementById('toggle-line').checked = d.line_enabled !== false;
+    if (document.activeElement.id !== 'toggle-fb')
+      document.getElementById('toggle-fb').checked = !!d.facebook_enabled;
+    updateChannelBar(d.line_enabled !== false, !!d.facebook_enabled);
   } catch(e) { console.error('loadStatus:', e); }
 }
 
@@ -223,7 +269,8 @@ async function testLine() {
 // ── News ────────────────────────────────────────────────────
 async function loadNews() {
   try {
-    allNews = await (await fetch(`${API}/api/news?limit=200`)).json();
+    const data = await (await fetch(`${API}/api/news?limit=200`)).json();
+    allNews = data.sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
     renderNews();
   } catch(e) {
     document.getElementById('news-list').innerHTML =
@@ -244,6 +291,7 @@ function getFilteredNews() {
   else if (curTab === 'peace')   return allNews.filter(n => n.category === 'peace');
   else if (curTab === 'neutral') return allNews.filter(n => n.category === 'neutral');
   else if (curTab === 'sent')    return allNews.filter(n => n.line_sent);
+  else if (curTab === 'fb_sent') return allNews.filter(n => n.facebook_sent);
   return allNews;
 }
 
@@ -312,23 +360,25 @@ function renderNews() {
     const descText  = n.description ? esc(n.description.slice(0, 160)) + (n.description.length > 160 ? '…' : '') : '';
     const pub       = n.published_at ? new Date(n.published_at).toLocaleString('th-TH') : '';
 
-    const sentBadge  = n.line_sent ? '<span class="badge b-sent"><i class="fa-brands fa-line"></i> ส่งแล้ว</span>' : '';
-    const transBadge = hasTH ? '<span class="badge b-trans">🇹🇭 แปลแล้ว</span>' : '';
+    const sentBadge  = n.line_sent     ? '<span class="badge b-sent"><i class="fa-brands fa-line"></i> ส่งแล้ว</span>'  : '';
+    const fbBadge    = n.facebook_sent ? '<span class="badge b-fb"><i class="fa-brands fa-facebook"></i> FB</span>'        : '';
+    const transBadge = hasTH           ? '<span class="badge b-trans">🇹🇭 แปลแล้ว</span>'                                  : '';
 
     const previewBlock = n.alert_message ? `
       <button class="preview-toggle" id="pbtn-${n.id}" onclick="togglePreview(${n.id})">📋 ดู LINE Preview ▼</button>
       <div class="apreview" id="prev-${n.id}">${esc(n.alert_message)}</div>
     ` : '';
 
-    const sendBtn = (!n.line_sent && n.alert_message)
-      ? `<button class="btn btn-primary btn-sm" onclick="sendLine(${n.id})"><i class="fa-brands fa-line"></i> ส่ง LINE</button>`
-      : '';
+    const sendBtn   = (!n.line_sent && n.alert_message)
+      ? `<button class="btn btn-primary btn-sm" onclick="sendLine(${n.id})"><i class="fa-brands fa-line"></i> ส่ง LINE</button>` : '';
+    const postFBBtn = (!n.facebook_sent && n.alert_message)
+      ? `<button class="btn btn-fb btn-sm" onclick="postFacebook(${n.id})"><i class="fa-brands fa-facebook"></i> FB</button>` : '';
 
     return `
 <div class="ncard ${cat}" id="nc-${n.id}">
   <div class="nmeta">
     <span class="badge ${badgeCls}">${catIcon} ${catLabel}</span>
-    ${sentBadge}${transBadge}
+    ${sentBadge}${fbBadge}${transBadge}
     <span class="nsrc" style="margin-left:auto">${esc(n.source || '')}</span>
   </div>
   <div class="ntitle">${titleMain}</div>
@@ -342,6 +392,7 @@ function renderNews() {
         <i class="fa-solid fa-arrow-up-right-from-square"></i> ลิงก์
       </a>
       ${sendBtn}
+      ${postFBBtn}
       <button class="btn btn-danger btn-sm" onclick="delNews(${n.id})">
         <i class="fa-solid fa-trash"></i>
       </button>
@@ -349,6 +400,52 @@ function renderNews() {
   </div>
 </div>`;
   }).join('');
+}
+
+// ── Save Channels ───────────────────────────────────────────
+async function saveChannels() {
+  const lineOn = document.getElementById('toggle-line').checked;
+  const fbOn   = document.getElementById('toggle-fb').checked;
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div> กำลังบันทึก...';
+  try {
+    const r = await fetch(`${API}/api/settings/channels`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({line_enabled: lineOn, facebook_enabled: fbOn}),
+    });
+    if (r.ok) {
+      toast(`บันทึกแล้ว — LINE ${lineOn?'เปิด':'ปิด'} · Facebook ${fbOn?'เปิด':'ปิด'} ✅`);
+      updateChannelBar(lineOn, fbOn);
+    } else {
+      toast('บันทึกไม่สำเร็จ', 'err');
+    }
+  } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึก Channel Settings';
+}
+
+// ── Test Facebook ───────────────────────────────────────────
+async function testFacebook() {
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div>';
+  try {
+    const d = await (await fetch(`${API}/api/facebook/test`, {method:'POST'})).json();
+    d.success ? toast('📘 โพสต์ Facebook สำเร็จ!') : toast('Facebook ไม่สำเร็จ — ตรวจสอบ Page Token', 'err');
+  } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-brands fa-facebook"></i> Test Facebook';
+}
+
+// ── Post Facebook ───────────────────────────────────────────
+async function postFacebook(id) {
+  try {
+    const d = await (await fetch(`${API}/api/facebook/send/${id}`, {method:'POST'})).json();
+    d.success ? toast('📘 โพสต์ Facebook สำเร็จ!') : toast('โพสต์ Facebook ไม่สำเร็จ', 'err');
+    await Promise.all([loadNews(), loadStatus()]);
+  } catch(e) { toast('เกิดข้อผิดพลาด', 'err'); }
 }
 
 async function sendLine(id) {

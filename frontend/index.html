@@ -37,6 +37,12 @@
       <div class="dot-blink" style="width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;"></div>
       <span id="auto-badge-txt">AUTO</span>
     </div>
+    <div class="glass-panel" id="line-ch-badge" style="display:none;align-items:center;gap:6px;border-radius:20px;padding:5px 12px;font-family:'Share Tech Mono',monospace;font-size:11px;box-shadow:none;border-color:rgba(63,185,80,0.4);color:var(--green);">
+      <i class="fa-brands fa-line"></i><span>LINE ON</span>
+    </div>
+    <div class="glass-panel" id="fb-ch-badge" style="display:none;align-items:center;gap:6px;border-radius:20px;padding:5px 12px;font-family:'Share Tech Mono',monospace;font-size:11px;box-shadow:none;border-color:rgba(24,119,242,0.4);color:#1877f2;">
+      <i class="fa-brands fa-facebook"></i><span>FB ON</span>
+    </div>
     <div class="glass-panel" id="last-badge" style="display:none;align-items:center;gap:6px;border-radius:20px;padding:5px 12px;font-family:'Share Tech Mono',monospace;font-size:11px;box-shadow:none;">
       <span style="color:var(--dim)">ล่าสุด</span>&nbsp;<span id="hdr-last-time">—</span>
     </div>
@@ -88,6 +94,15 @@
   </div>
 
   <div class="glass-panel" style="border-radius:14px;padding:16px 20px;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#1877f2,transparent)"></div>
+    <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;font-family:'Share Tech Mono',monospace;margin-bottom:6px;">
+      <i class="fa-brands fa-facebook" style="margin-right:4px;color:#1877f2"></i> Facebook โพสต์
+    </div>
+    <div style="font-size:30px;font-weight:700;color:#1877f2;font-family:'Share Tech Mono',monospace;line-height:1;" id="s-fbsent">—</div>
+    <div style="font-size:11px;color:var(--dim);margin-top:5px;">โพสต์แล้ว</div>
+  </div>
+
+  <div class="glass-panel" style="border-radius:14px;padding:16px 20px;position:relative;overflow:hidden;">
     <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--yellow),transparent)"></div>
     <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;font-family:'Share Tech Mono',monospace;margin-bottom:6px;">
       <i class="fa-solid fa-clock" style="margin-right:4px;color:var(--yellow)"></i> อัปเดตล่าสุด
@@ -123,6 +138,12 @@
       </div>
 
       <div class="drpanel" id="daterange-panel">
+        <div class="presets">
+          <button class="preset-chip" onclick="setPreset('today')">วันนี้</button>
+          <button class="preset-chip" onclick="setPreset('yesterday')">เมื่อวาน</button>
+          <button class="preset-chip" onclick="setPreset('7d')">7 วัน</button>
+          <button class="preset-chip" onclick="setPreset('30d')">30 วัน</button>
+        </div>
         <div class="fg">
           <label class="fl"><i class="fa-solid fa-calendar-days" style="margin-right:3px;color:var(--purple)"></i> วันเริ่มต้น</label>
           <input type="datetime-local" class="fi" id="from-dt">
@@ -178,12 +199,49 @@
 
       <div class="divider"></div>
 
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <button class="btn btn-success btn-full" onclick="saveScheduler()">
-          <i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่า Auto
+      <button class="btn btn-success btn-full" onclick="saveScheduler()">
+        <i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่า Auto
+      </button>
+    </div>
+  </div>
+
+  <!-- Alert Channels -->
+  <div class="glass-panel" style="border-radius:16px;overflow:hidden;">
+    <div style="padding:12px 16px;border-bottom:1px solid rgba(114,65,155,0.2);display:flex;align-items:center;gap:8px;">
+      <i class="fa-solid fa-bullhorn" style="color:var(--purple)"></i>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">Alert Channels</span>
+    </div>
+    <div style="padding:16px;">
+      <div class="trow" style="padding-top:0;">
+        <div>
+          <div class="tlabel"><i class="fa-brands fa-line" style="color:var(--green);margin-right:5px;"></i> LINE Alert</div>
+          <div class="tdesc">ส่งแจ้งเตือนผ่าน LINE Messaging API</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-line" checked>
+          <span class="tslider"></span>
+        </label>
+      </div>
+      <div class="trow">
+        <div>
+          <div class="tlabel"><i class="fa-brands fa-facebook" style="color:#1877f2;margin-right:5px;"></i> Facebook Alert</div>
+          <div class="tdesc">โพสต์ไปยัง Facebook Page อัตโนมัติ</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-fb">
+          <span class="tslider"></span>
+        </label>
+      </div>
+      <div class="divider"></div>
+      <button class="btn btn-success btn-full" onclick="saveChannels()">
+        <i class="fa-solid fa-floppy-disk"></i> บันทึก Channel Settings
+      </button>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <button class="btn btn-ghost btn-sm" style="flex:1;justify-content:center;" onclick="testLine()">
+          <i class="fa-brands fa-line"></i> Test LINE
         </button>
-        <button class="btn btn-ghost btn-full btn-sm" onclick="testLine()">
-          <i class="fa-brands fa-line"></i> ทดสอบส่ง LINE
+        <button class="btn btn-ghost btn-sm" style="flex:1;justify-content:center;" onclick="testFacebook()">
+          <i class="fa-brands fa-facebook"></i> Test FB
         </button>
       </div>
     </div>
@@ -244,7 +302,13 @@
     <button class="tab" onclick="setTab('danger',this)"><i class="fa-solid fa-triangle-exclamation"></i> Danger</button>
     <button class="tab" onclick="setTab('peace',this)"><i class="fa-solid fa-dove"></i> Peace</button>
     <button class="tab" onclick="setTab('neutral',this)">⚪ Neutral</button>
-    <button class="tab" onclick="setTab('sent',this)"><i class="fa-brands fa-line"></i> ส่งแล้ว</button>
+    <button class="tab" onclick="setTab('sent',this)"><i class="fa-brands fa-line"></i> LINE ส่ง</button>
+    <button class="tab" onclick="setTab('fb_sent',this)"><i class="fa-brands fa-facebook"></i> FB โพสต์</button>
+  </div>
+  <div class="ch-status" id="ch-status-bar">
+    <span style="color:var(--dim)">Channels:</span>
+    <span class="ch-badge off" id="ch-line-badge"><i class="fa-brands fa-line"></i> LINE —</span>
+    <span class="ch-badge off" id="ch-fb-badge"><i class="fa-brands fa-facebook"></i> Facebook —</span>
   </div>
 
   <div class="nlist" id="news-list">
