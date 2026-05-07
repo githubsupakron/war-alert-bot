@@ -20,11 +20,17 @@ _SYSTEM_PROMPT = (
     "Use peace for ceasefire, peace talks, de-escalation, withdrawal, treaties, "
     "hostage/prisoner deals, mediation, or agreements. "
     "Use neutral when the article is not clearly war-related or the evidence is weak. "
+    "ALL Thai-language fields must be written in Thai only — no English. "
     "Respond ONLY with valid JSON containing exactly these keys: "
     "category (string: 'danger', 'peace', or 'neutral'), "
     "confidence (float 0.0–1.0), "
-    "reason (string, max 200 chars), "
-    "market_impact (string in Thai, max 200 chars). "
+    "reason (string in English, max 200 chars), "
+    "summary_th (string in Thai: one-sentence news summary, max 200 chars), "
+    "market_impact (string in Thai: overall market impact summary, max 200 chars), "
+    "gold_impact (string in Thai: impact on gold price, max 120 chars), "
+    "stock_impact (string in Thai: impact on stock market, max 120 chars), "
+    "usd_impact (string in Thai: impact on USD, max 120 chars — relevant for danger), "
+    "asia_impact (string in Thai: impact on Asian markets, max 120 chars — relevant for peace). "
     "No other text, no markdown, no explanation outside the JSON object."
 )
 
@@ -208,11 +214,23 @@ async def classify_with_codesmart(article: dict) -> dict | None:
             "category":      str(parsed["category"]),
             "confidence":    float(parsed["confidence"]),
             "reason":        str(parsed.get("reason", ""))[:500],
-            "market_impact": str(parsed.get("market_impact", ""))[:500],
+            "summary_th":    str(parsed.get("summary_th", ""))[:300],
+            "market_impact": str(parsed.get("market_impact", ""))[:300],
+            "gold_impact":   str(parsed.get("gold_impact", ""))[:200],
+            "stock_impact":  str(parsed.get("stock_impact", ""))[:200],
+            "usd_impact":    str(parsed.get("usd_impact", ""))[:200],
+            "asia_impact":   str(parsed.get("asia_impact", ""))[:200],
         }
         print(
             "[CodeSmart] Classification success: "
-            f"category={result['category']} confidence={result['confidence']:.3f} "
+            f"category={result['category']} confidence={result['confidence']:.3f} | "
+            f"reason={result['reason']!r} | "
+            f"summary_th={result['summary_th']!r} | "
+            f"market_impact={result['market_impact']!r} | "
+            f"gold_impact={result['gold_impact']!r} | "
+            f"stock_impact={result['stock_impact']!r} | "
+            f"usd_impact={result['usd_impact']!r} | "
+            f"asia_impact={result['asia_impact']!r} | "
             f"{_completion_debug(data)}"
         )
         return result

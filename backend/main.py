@@ -99,12 +99,15 @@ async def process_and_notify(
     classifier_mode = get_setting(db, "classifier_mode", "keyword")
     use_ai          = classifier_mode == "ai"
 
-    articles = await fetch_news_from_api(
-        keywords=keywords,
-        from_dt=from_dt,
-        to_dt=to_dt,
-        hours_back=hours_back,
-    )
+    try:
+        articles = await fetch_news_from_api(
+            keywords=keywords,
+            from_dt=from_dt,
+            to_dt=to_dt,
+            hours_back=hours_back,
+        )
+    except ValueError as exc:
+        raise exc
 
     new_count = sent_line = sent_fb = 0
 
@@ -155,7 +158,7 @@ async def process_and_notify(
         title_th = await translate_to_thai(article["title"])
         alert_msg = build_alert_message(
             article["title"], title_th, article["url"],
-            {"category": category, "market_impact": market_impact},
+            final_result,
             pub_str,
         )
 
@@ -206,6 +209,8 @@ async def scheduled_fetch():
     try:
         result = await process_and_notify(db)
         print(f"[Scheduler] {datetime.utcnow().strftime('%H:%M:%S')} → {result}")
+    except ValueError as exc:
+        print(f"[Scheduler] {datetime.utcnow().strftime('%H:%M:%S')} ⚠️ {exc}")
     finally:
         db.close()
 
@@ -318,7 +323,10 @@ async def manual_fetch(req: ManualFetchRequest, db: Session = Depends(get_db)):
         from_dt = datetime.fromisoformat(req.from_datetime)
     if req.to_datetime:
         to_dt = datetime.fromisoformat(req.to_datetime)
-    result = await process_and_notify(db, from_dt=from_dt, to_dt=to_dt)
+    try:
+        result = await process_and_notify(db, from_dt=from_dt, to_dt=to_dt)
+    except ValueError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
     return {"status": "success", **result}
 
 

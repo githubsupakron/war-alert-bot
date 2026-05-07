@@ -33,7 +33,13 @@ def _make_mock_client(status: int, body: dict | None = None, text: str = ""):
 async def test_valid_response_returns_parsed_dict():
     payload = json.dumps({
         "category": "danger", "confidence": 0.92,
-        "reason": "Clear military attack", "market_impact": "Gold up",
+        "reason": "Clear military attack",
+        "summary_th": "ขีปนาวุธโจมตีเมืองหลวง",
+        "market_impact": "ทองคำอาจพุ่งสูงในระยะสั้น",
+        "gold_impact": "📈 ทองคำอาจพุ่งแรง",
+        "stock_impact": "📉 หุ้นร่วงหนัก",
+        "usd_impact": "USD แข็งค่าขึ้น",
+        "asia_impact": "",
     })
     body = {"choices": [{"message": {"content": payload}}]}
     mock_client = _make_mock_client(200, body)
@@ -45,8 +51,36 @@ async def test_valid_response_returns_parsed_dict():
     assert result is not None
     assert result["category"] == "danger"
     assert result["confidence"] == 0.92
-    assert "reason" in result
-    assert "market_impact" in result
+    assert result["reason"] == "Clear military attack"
+    assert result["summary_th"] == "ขีปนาวุธโจมตีเมืองหลวง"
+    assert result["market_impact"] == "ทองคำอาจพุ่งสูงในระยะสั้น"
+    assert result["gold_impact"] == "📈 ทองคำอาจพุ่งแรง"
+    assert result["stock_impact"] == "📉 หุ้นร่วงหนัก"
+    assert result["usd_impact"] == "USD แข็งค่าขึ้น"
+    assert result["asia_impact"] == ""
+
+
+async def test_missing_optional_fields_default_to_empty_string():
+    payload = json.dumps({
+        "category": "peace", "confidence": 0.80,
+        "reason": "Ceasefire",
+        # summary_th, market_impact, gold_impact, stock_impact, usd_impact, asia_impact all absent
+    })
+    body = {"choices": [{"message": {"content": payload}}]}
+    mock_client = _make_mock_client(200, body)
+
+    with patch("codesmart_client.httpx.AsyncClient", return_value=mock_client), \
+         patch.dict("os.environ", {"CODESMART_API_KEY": "test-key"}):
+        result = await classify_with_codesmart(_ARTICLE)
+
+    assert result is not None
+    assert result["category"] == "peace"
+    assert result["summary_th"] == ""
+    assert result["market_impact"] == ""
+    assert result["gold_impact"] == ""
+    assert result["stock_impact"] == ""
+    assert result["usd_impact"] == ""
+    assert result["asia_impact"] == ""
 
 
 async def test_invalid_json_returns_none():
@@ -181,7 +215,7 @@ async def test_plain_assistant_text_returns_none():
 
 async def test_fenced_json_content_is_accepted():
     payload = """```json
-{"category": "danger", "confidence": 0.91, "reason": "Missile strike", "market_impact": "ทองคำอาจปรับขึ้น"}
+{"category": "danger", "confidence": 0.91, "reason": "Missile strike", "summary_th": "ขีปนาวุธโจมตีเป้าหมาย", "market_impact": "ทองคำอาจปรับขึ้น", "gold_impact": "ทองคำพุ่ง", "stock_impact": "หุ้นร่วง", "usd_impact": "USD แข็ง", "asia_impact": ""}
 ```"""
     body = {"choices": [{"message": {"content": payload}}]}
     mock_client = _make_mock_client(200, body)
@@ -195,7 +229,7 @@ async def test_fenced_json_content_is_accepted():
 
 
 async def test_embedded_json_content_is_accepted():
-    payload = 'Here is the result: {"category": "peace", "confidence": 0.82, "reason": "Peace talks", "market_impact": "ทองคำอาจอ่อนตัว"}'
+    payload = 'Here is the result: {"category": "peace", "confidence": 0.82, "reason": "Peace talks", "summary_th": "การเจรจาสันติภาพเริ่มขึ้น", "market_impact": "ทองคำอาจอ่อนตัว", "gold_impact": "ทองคำอ่อนตัว", "stock_impact": "หุ้นฟื้น", "usd_impact": "", "asia_impact": "ตลาดเอเชียบวก"}'
     body = {"choices": [{"message": {"content": payload}}]}
     mock_client = _make_mock_client(200, body)
 

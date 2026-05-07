@@ -279,7 +279,7 @@ async function manualFetch() {
     if (r.ok) {
       toast(`ดึงข่าว ${d.fetched} รายการ · ใหม่ ${d.new} · ส่ง LINE ${d.sent} รายการ`);
     } else {
-      toast('เกิดข้อผิดพลาดในการดึงข่าว', 'err');
+      toast(d.detail || 'เกิดข้อผิดพลาดในการดึงข่าว', 'err');
     }
     await Promise.all([loadNews(), loadStatus()]);
   } catch(e) { toast('เกิดข้อผิดพลาด: ' + e.message, 'err'); }

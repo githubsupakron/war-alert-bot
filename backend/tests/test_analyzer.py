@@ -83,3 +83,101 @@ def test_analyze_news_backward_compat():
     assert "category" in result
     assert "market_impact" in result
     assert "confidence" not in result
+
+
+# ── build_alert_message tests ──────────────────────────────────────────────────
+
+from analyzer import build_alert_message
+
+_BASE = dict(
+    title_en="Rockets hit city",
+    title_th="จรวดโจมตีเมือง",
+    url="https://example.com/1",
+    published_at="2026-05-07 10:00",
+)
+
+
+def test_neutral_returns_none():
+    msg = build_alert_message(
+        **_BASE,
+        analysis={"category": "neutral", "market_impact": ""},
+    )
+    assert msg is None
+
+
+def test_danger_with_ai_fields():
+    analysis = {
+        "category": "danger",
+        "summary_th": "ขีปนาวุธโจมตีเมืองหลวง",
+        "market_impact": "ตลาดผันผวนรุนแรง",
+        "gold_impact": "ทองคำพุ่งแรง",
+        "stock_impact": "หุ้นร่วงหนัก",
+        "usd_impact": "USD แข็งค่า",
+        "asia_impact": "",
+    }
+    msg = build_alert_message(**_BASE, analysis=analysis)
+    assert msg is not None
+    assert "🚨 WAR ALERT" in msg
+    assert "ขีปนาวุธโจมตีเมืองหลวง" in msg
+    assert "ทองคำพุ่งแรง" in msg
+    assert "หุ้นร่วงหนัก" in msg
+    assert "USD แข็งค่า" in msg
+    assert "ตลาดผันผวนรุนแรง" in msg
+    assert "🧠 สรุปข่าว:" in msg
+
+
+def test_peace_with_ai_fields():
+    analysis = {
+        "category": "peace",
+        "summary_th": "การเจรจาสันติภาพประสบความสำเร็จ",
+        "market_impact": "ตลาดฟื้นตัว",
+        "gold_impact": "ทองคำอ่อนตัว",
+        "stock_impact": "หุ้นฟื้น",
+        "usd_impact": "",
+        "asia_impact": "ตลาดเอเชียบวก",
+    }
+    msg = build_alert_message(**_BASE, analysis=analysis)
+    assert msg is not None
+    assert "☮️ PEACE NEWS" in msg
+    assert "การเจรจาสันติภาพประสบความสำเร็จ" in msg
+    assert "ทองคำอ่อนตัว" in msg
+    assert "หุ้นฟื้น" in msg
+    assert "ตลาดเอเชียบวก" in msg
+    assert "ตลาดฟื้นตัว" in msg
+    assert "🧠 สรุปข่าว:" in msg
+
+
+def test_danger_fallback_when_ai_fields_empty():
+    analysis = {
+        "category": "danger",
+        "summary_th": "",
+        "market_impact": "",
+        "gold_impact": "",
+        "stock_impact": "",
+        "usd_impact": "",
+        "asia_impact": "",
+    }
+    msg = build_alert_message(**_BASE, analysis=analysis)
+    assert msg is not None
+    assert "safe haven" in msg
+    assert "risk-off" in msg
+    assert "flight to safety" in msg
+    assert "🧠 สรุปข่าว:" not in msg
+
+
+def test_peace_fallback_when_ai_fields_empty():
+    analysis = {
+        "category": "peace",
+        "summary_th": "",
+        "market_impact": "",
+        "gold_impact": "",
+        "stock_impact": "",
+        "usd_impact": "",
+        "asia_impact": "",
+    }
+    msg = build_alert_message(**_BASE, analysis=analysis)
+    assert msg is not None
+    assert "safe haven demand" in msg
+    assert "risk-on" in msg
+    assert "อาจบวก" in msg
+    assert "🧠 สรุปข่าว:" not in msg

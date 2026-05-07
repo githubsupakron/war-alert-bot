@@ -6,6 +6,9 @@ Manual mode uses these keyword scores directly. AI mode bypasses this module
 for classification and lets CodeSmart choose danger, peace, or neutral.
 """
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ── Built-in weighted keyword defaults ────────────────────────────────────────
 # Custom keywords from settings get weight 1.0; built-ins use higher weights
@@ -169,36 +172,54 @@ def build_alert_message(
     analysis: dict,
     published_at: str,
 ) -> str | None:
+    logger.info("build_alert_message analysis=%s", analysis)
     category = analysis.get("category", "neutral")
 
     has_translation = title_th and title_th != title_en
     title_main = title_th if has_translation else title_en
     title_sub  = f"\n   🔤 {title_en}" if has_translation else ""
 
+    summary_th   = analysis.get("summary_th", "")
+    market_impact = analysis.get("market_impact", "")
+    gold_impact  = analysis.get("gold_impact", "")
+    stock_impact = analysis.get("stock_impact", "")
+    usd_impact   = analysis.get("usd_impact", "")
+    asia_impact  = analysis.get("asia_impact", "")
+
+    summary_block = f"\n🧠 สรุปข่าว:\n  • {summary_th}\n" if summary_th else ""
+
     if category == "danger":
+        gold_line  = gold_impact  or "📈 อาจพุ่งสูง (safe haven)"
+        stock_line = stock_impact or "📉 อาจร่วงแรง (risk-off)"
+        usd_line   = usd_impact   or "อาจแข็งค่า (flight to safety)"
         return (
             f"🚨 WAR ALERT - ระวัง!\n"
             f"━━━━━━━━━━━━━━━\n"
-            f"📰 {title_main}{title_sub}\n\n"
+            f"📰 {title_main}{title_sub}\n"
+            f"{summary_block}\n"
             f"📊 ผลกระทบตลาดที่คาดการณ์:\n"
-            f"  • ทองคำ: 📈 อาจพุ่งสูง (safe haven)\n"
-            f"  • หุ้น: 📉 อาจร่วงแรง (risk-off)\n"
-            f"  • 💵 USD: อาจแข็งค่า (flight to safety)\n\n"
-            f"💡 {analysis.get('market_impact', '')}\n"
+            f"  • ทองคำ: {gold_line}\n"
+            f"  • หุ้น: {stock_line}\n"
+            f"  • 💵 USD: {usd_line}\n\n"
+            f"💡 {market_impact}\n"
             f"━━━━━━━━━━━━━━━\n"
             f"🔗 {url}\n"
             f"🕐 {published_at}"
         )
     elif category == "peace":
+        gold_line  = gold_impact  or "📉 อาจลดลง (ลด safe haven demand)"
+        stock_line = stock_impact or "📈 อาจฟื้นตัว (risk-on)"
+        asia_line  = asia_impact  or "อาจบวก"
         return (
             f"☮️ PEACE NEWS - ข่าวดี!\n"
             f"━━━━━━━━━━━━━━━\n"
-            f"📰 {title_main}{title_sub}\n\n"
+            f"📰 {title_main}{title_sub}\n"
+            f"{summary_block}\n"
             f"📊 ผลกระทบตลาดที่คาดการณ์:\n"
-            f"  • ทองคำ: 📉 อาจลดลง (ลด safe haven demand)\n"
-            f"  • หุ้น: 📈 อาจฟื้นตัว (risk-on)\n"
-            f"  • 🌏 ตลาดเอเชีย: อาจบวก\n\n"
-            f"💡 {analysis.get('market_impact', '')}\n"
+            f"  • ทองคำ: {gold_line}\n"
+            f"  • หุ้น: {stock_line}\n"
+            f"  • 🌏 ตลาดเอเชีย: {asia_line}\n\n"
+            f"💡 {market_impact}\n"
             f"━━━━━━━━━━━━━━━\n"
             f"🔗 {url}\n"
             f"🕐 {published_at}"

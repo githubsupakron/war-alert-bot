@@ -48,8 +48,9 @@ async def fetch_news_from_api(
             data = resp.json()
 
         if data.get("status") != "ok":
-            print(f"NewsAPI error: {data.get('message')}")
-            return []
+            msg = data.get("message", "Unknown NewsAPI error")
+            print(f"NewsAPI error: {msg}")
+            raise ValueError(f"NewsAPI: {msg}")
 
         articles = data.get("articles", [])
         results = []
