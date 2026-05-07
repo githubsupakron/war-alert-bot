@@ -11,4 +11,4 @@ else
 fi
 
 echo "Starting War Alert Bot on http://localhost:8000"
-cd backend && python main.py
+cd backend && python3 main.py
