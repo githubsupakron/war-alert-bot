@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 from pydantic import BaseModel
 import os
@@ -18,6 +18,7 @@ from models import NewsItem, Setting, get_db, init_db, SessionLocal
 from news_fetcher import fetch_news_from_api, parse_published_at
 from analyzer import analyze_news, build_alert_message
 from line_notifier import send_line_message
+from facebook_notifier import post_to_facebook_page
 from translator import translate_to_thai
 
 scheduler = AsyncIOScheduler()
@@ -40,6 +41,10 @@ class KeywordSettings(BaseModel):
     danger_keywords: str
     peace_keywords: str
     max_news_age_hours: int
+
+class ChannelSettings(BaseModel):
+    line_enabled: bool
+    facebook_enabled: bool
 
 
 # ─── Helpers ──────────────────────────────────────────────────
@@ -65,6 +70,10 @@ def apply_scheduler(interval_value: int, interval_unit: str):
     )
     print(f"[Scheduler] Set to every {interval_value} {interval_unit}")
 
+def build_fb_message(alert_msg: str) -> str:
+    """Append hashtags to the LINE-style alert message for Facebook."""
+    return alert_msg + "\n\n#WarAlertBot #ทองคำ #หุ้น #ข่าวสงคราม #GoldAlert"
+
 
 # ─── Core Process ─────────────────────────────────────────────
 
@@ -78,6 +87,8 @@ async def process_and_notify(
 
     keywords   = get_setting(db, "keywords", "Iran attack,Israel strike,war")
     hours_back = int(get_setting(db, "max_news_age_hours", "6"))
+    line_on    = get_setting(db, "line_enabled", "true") == "true"
+    fb_on      = get_setting(db, "facebook_enabled", "false") == "true"
 
     articles = await fetch_news_from_api(
         keywords=keywords,
@@ -86,20 +97,31 @@ async def process_and_notify(
         hours_back=hours_back,
     )
 
-    new_count = sent_count = 0
+    new_count = sent_line = sent_fb = 0
 
     for article in articles:
-        if db.query(NewsItem).filter(NewsItem.url == article["url"]).first():
+        existing = db.query(NewsItem).filter(NewsItem.url == article["url"]).first()
+        if existing:
+            # Already in DB — retry sending to channels that haven't received it yet
+            if existing.category in ("danger", "peace") and existing.alert_message:
+                if line_on and not existing.line_sent:
+                    if await send_line_message(existing.alert_message):
+                        existing.line_sent = True
+                        db.commit()
+                        sent_line += 1
+                if fb_on and not existing.facebook_sent:
+                    if await post_to_facebook_page(build_fb_message(existing.alert_message), existing.url or ""):
+                        existing.facebook_sent = True
+                        db.commit()
+                        sent_fb += 1
             continue
 
         analysis  = analyze_news(article["title"], article["description"])
         category  = analysis.get("category", "neutral")
         pub_dt    = parse_published_at(article["published_at"])
-        pub_str   = pub_dt.strftime("%Y-%m-%d %H:%M UTC")
-
-        # Translate title to Thai (free, falls back to EN on failure)
+        thai_dt   = pub_dt + timedelta(hours=7)
+        pub_str   = thai_dt.strftime("%Y-%m-%d %H:%M น. (เวลาไทย)")
         title_th  = await translate_to_thai(article["title"])
-
         alert_msg = build_alert_message(
             article["title"], title_th, article["url"], analysis, pub_str
         )
@@ -114,6 +136,7 @@ async def process_and_notify(
             category=category,
             alert_message=alert_msg or "",
             line_sent=False,
+            facebook_sent=False,
         )
         db.add(news)
         db.commit()
@@ -121,12 +144,24 @@ async def process_and_notify(
         new_count += 1
 
         if alert_msg and category in ("danger", "peace"):
-            if await send_line_message(alert_msg):
+            if line_on and await send_line_message(alert_msg):
                 news.line_sent = True
                 db.commit()
-                sent_count += 1
+                sent_line += 1
 
-    return {"fetched": len(articles), "new": new_count, "sent": sent_count}
+            if fb_on:
+                if await post_to_facebook_page(build_fb_message(alert_msg), article["url"]):
+                    news.facebook_sent = True
+                    db.commit()
+                    sent_fb += 1
+
+    return {
+        "fetched":    len(articles),
+        "new":        new_count,
+        "sent_line":  sent_line,
+        "sent_fb":    sent_fb,
+        "sent":       sent_line,   # backward compat
+    }
 
 
 async def scheduled_fetch():
@@ -153,7 +188,7 @@ async def lifespan(app: FastAPI):
             print(f"✅ Auto-fetch restored: every {iv} {unit}")
     finally:
         db.close()
-    print("✅ War Alert Bot v2.1 started!")
+    print("✅ War Alert Bot v2.2 started!")
     yield
     if scheduler.running:
         scheduler.shutdown()
@@ -161,7 +196,7 @@ async def lifespan(app: FastAPI):
 
 # ─── App ──────────────────────────────────────────────────────
 
-app = FastAPI(title="War Alert Bot API", version="2.1.0", lifespan=lifespan)
+app = FastAPI(title="War Alert Bot API", version="2.2.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -176,7 +211,8 @@ app.add_middleware(
 @app.get("/api/status")
 async def get_status(db: Session = Depends(get_db)):
     total        = db.query(NewsItem).count()
-    sent         = db.query(NewsItem).filter(NewsItem.line_sent == True).count()
+    line_sent    = db.query(NewsItem).filter(NewsItem.line_sent == True).count()
+    fb_sent      = db.query(NewsItem).filter(NewsItem.facebook_sent == True).count()
     danger_count = db.query(NewsItem).filter(NewsItem.category == "danger").count()
     peace_count  = db.query(NewsItem).filter(NewsItem.category == "peace").count()
     return {
@@ -185,11 +221,14 @@ async def get_status(db: Session = Depends(get_db)):
         "interval_unit":     get_setting(db, "fetch_interval_unit", "minutes"),
         "last_fetch":        last_fetch_time.isoformat() if last_fetch_time else None,
         "total_news":        total,
-        "sent_news":         sent,
+        "sent_news":         line_sent,
+        "fb_sent":           fb_sent,
         "danger_count":      danger_count,
         "peace_count":       peace_count,
         "scheduler_running": scheduler.running,
         "scheduler_jobs":    len(scheduler.get_jobs()),
+        "line_enabled":      get_setting(db, "line_enabled", "true") == "true",
+        "facebook_enabled":  get_setting(db, "facebook_enabled", "false") == "true",
     }
 
 
@@ -205,6 +244,8 @@ async def get_news(
     if category and category != "all":
         if category == "sent":
             q = q.filter(NewsItem.line_sent == True)
+        elif category == "fb_sent":
+            q = q.filter(NewsItem.facebook_sent == True)
         else:
             q = q.filter(NewsItem.category == category)
     news = q.limit(limit).all()
@@ -220,6 +261,7 @@ async def get_news(
             "category":      n.category,
             "alert_message": n.alert_message,
             "line_sent":     n.line_sent,
+            "facebook_sent": n.facebook_sent or False,
             "created_at":    n.created_at.isoformat() if n.created_at else None,
         }
         for n in news
@@ -280,12 +322,8 @@ async def update_scheduler_settings(body: SchedulerSettings, db: Session = Depen
     else:
         scheduler.remove_all_jobs()
 
-    return {
-        "status": "updated",
-        "auto_fetch": body.auto_fetch,
-        "interval_value": body.interval_value,
-        "interval_unit": unit,
-    }
+    return {"status": "updated", "auto_fetch": body.auto_fetch,
+            "interval_value": body.interval_value, "interval_unit": unit}
 
 
 @app.put("/api/settings/keywords")
@@ -298,11 +336,21 @@ async def update_keyword_settings(body: KeywordSettings, db: Session = Depends(g
     return {"status": "updated"}
 
 
+@app.put("/api/settings/channels")
+async def update_channel_settings(body: ChannelSettings, db: Session = Depends(get_db)):
+    """เปิด/ปิด LINE และ Facebook alert channels"""
+    set_setting(db, "line_enabled",     "true" if body.line_enabled     else "false")
+    set_setting(db, "facebook_enabled", "true" if body.facebook_enabled else "false")
+    db.commit()
+    return {"status": "updated",
+            "line_enabled": body.line_enabled, "facebook_enabled": body.facebook_enabled}
+
+
 # ─── LINE ─────────────────────────────────────────────────────
 
 @app.post("/api/line/test")
 async def test_line():
-    msg = "🤖 War Alert Bot v2.1 — ทดสอบการแจ้งเตือน!\n\nระบบทำงานปกติ ✅\nรองรับข่าว 2 ภาษา (ไทย + อังกฤษ)"
+    msg = "🤖 War Alert Bot v2.2 — ทดสอบ LINE Alert!\n\nระบบทำงานปกติ ✅\nรองรับข่าว 2 ภาษา + Facebook"
     success = await send_line_message(msg)
     return {"success": success}
 
@@ -313,10 +361,34 @@ async def send_line_for_news(news_id: int, db: Session = Depends(get_db)):
     if not news:
         raise HTTPException(status_code=404, detail="News not found")
     if not news.alert_message:
-        raise HTTPException(status_code=400, detail="No alert message for this news")
+        raise HTTPException(status_code=400, detail="No alert message")
     success = await send_line_message(news.alert_message)
     if success:
         news.line_sent = True
+        db.commit()
+    return {"success": success}
+
+
+# ─── Facebook ─────────────────────────────────────────────────
+
+@app.post("/api/facebook/test")
+async def test_facebook():
+    msg = "🤖 War Alert Bot v2.2 — ทดสอบการโพสต์ Facebook Page!\n\nระบบเชื่อมต่อสำเร็จ ✅\n\n#WarAlertBot #Test"
+    success = await post_to_facebook_page(msg)
+    return {"success": success}
+
+
+@app.post("/api/facebook/send/{news_id}")
+async def post_facebook_for_news(news_id: int, db: Session = Depends(get_db)):
+    news = db.query(NewsItem).filter(NewsItem.id == news_id).first()
+    if not news:
+        raise HTTPException(status_code=404, detail="News not found")
+    if not news.alert_message:
+        raise HTTPException(status_code=400, detail="No alert message")
+    fb_msg = build_fb_message(news.alert_message)
+    success = await post_to_facebook_page(fb_msg, news.url or "")
+    if success:
+        news.facebook_sent = True
         db.commit()
     return {"success": success}
 

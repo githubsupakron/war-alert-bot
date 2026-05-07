@@ -129,7 +129,7 @@
       <div class="trow" style="padding-top:0;">
         <div>
           <div class="tlabel">ระบุช่วงวันที่</div>
-          <div class="tdesc">เลือก From / To datetime</div>
+          <div class="tdesc">เปิดเพื่อเลือกวันจากปฏิทิน</div>
         </div>
         <label class="toggle">
           <input type="checkbox" id="use-daterange" onchange="toggleDateRange()">
@@ -137,6 +137,7 @@
         </label>
       </div>
 
+      <!-- Date Range (hidden by default) -->
       <div class="drpanel" id="daterange-panel">
         <div class="presets">
           <button class="preset-chip" onclick="setPreset('today')">วันนี้</button>
@@ -162,6 +163,45 @@
         </button>
       </div>
       <div class="hint" id="last-fetch-txt" style="margin-top:8px;text-align:center;">ยังไม่เคยดึงข่าว</div>
+    </div>
+  </div>
+
+  <!-- Alert Channels -->
+  <div class="panel">
+    <div class="ph"><div class="ptitle">📢 Alert Channels</div></div>
+    <div class="pb">
+
+      <div class="trow" style="padding-top:0">
+        <div>
+          <div class="tlabel">📱 LINE Alert</div>
+          <div class="tdesc">ส่งแจ้งเตือนผ่าน LINE Messaging API</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-line" checked>
+          <span class="tslider"></span>
+        </label>
+      </div>
+
+      <div class="trow">
+        <div>
+          <div class="tlabel">📘 Facebook Alert</div>
+          <div class="tdesc">โพสต์ไปยัง Facebook Page อัตโนมัติ</div>
+        </div>
+        <label class="toggle toggle-fb">
+          <input type="checkbox" id="toggle-fb">
+          <span class="tslider"></span>
+        </label>
+      </div>
+
+      <div class="divider"></div>
+
+      <button class="btn btn-green btn-full" onclick="saveChannels()">
+        💾 บันทึก Channel Settings
+      </button>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="btn btn-ghost btn-half btn-sm" onclick="testLine()">📱 Test LINE</button>
+        <button class="btn btn-fb btn-half btn-sm" onclick="testFacebook()">📘 Test FB</button>
+      </div>
     </div>
   </div>
 
@@ -257,7 +297,7 @@
       <div class="fg">
         <label class="fl"><i class="fa-solid fa-key" style="margin-right:3px;color:var(--purple)"></i> คำค้นหาข่าว (NewsAPI) — คั่น comma</label>
         <textarea class="fta" id="kw-search" placeholder="Iran attack, war, strike..."></textarea>
-        <div class="hint">ส่งได้สูงสุด 5 คำไปยัง NewsAPI</div>
+        <div class="hint">สูงสุด 5 คำ</div>
       </div>
       <div class="fg">
         <label class="fl" style="color:var(--red);"><i class="fa-solid fa-triangle-exclamation" style="margin-right:3px;"></i> Danger Keywords</label>
@@ -295,6 +335,13 @@
         <i class="fa-solid fa-trash"></i> ลบทั้งหมด
       </button>
     </div>
+  </div>
+
+  <!-- Channel active status bar -->
+  <div class="ch-status" id="ch-status-bar">
+    <span style="color:var(--dim)">Channels:</span>
+    <span class="ch-badge off" id="ch-line-badge">📱 LINE —</span>
+    <span class="ch-badge off" id="ch-fb-badge">📘 Facebook —</span>
   </div>
 
   <div class="tabs">

@@ -7,7 +7,17 @@
       "Bash(lsof -ti:8000)",
       "Bash(xargs kill -9)",
       "Bash(lsof -i:8000)",
-      "Bash(chmod +x /Users/supakronoapfang/Documents/Hackathon/war-alert-bot/start.sh)"
+      "Bash(chmod +x /Users/supakronoapfang/Documents/Hackathon/war-alert-bot/start.sh)",
+      "Bash(curl -s http://localhost:8000/api/status)",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s http://localhost:8000)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('OK — line_enabled:', d['line_enabled'], '| facebook_enabled:', d['facebook_enabled']\\)\")",
+      "Bash(chmod +x /Users/supakronoapfang/Documents/Hackathon/war-alert-bot/stop.sh)",
+      "Bash(curl -s -X POST http://localhost:8000/api/facebook/test)",
+      "Bash(ls /opt/homebrew/etc/openssl@3/cert.pem 2>/dev/null && echo \"exists\" || echo \"MISSING\")",
+      "Read(//opt/homebrew/etc/ca-certificates/**)",
+      "Bash(env)",
+      "Bash(chmod +x /Users/supakronoapfang/Documents/Hackathon/war-alert-bot/stop.sh /Users/supakronoapfang/Documents/Hackathon/war-alert-bot/start.sh)"
     ]
   }
 }

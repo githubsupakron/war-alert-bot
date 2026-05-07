@@ -2,64 +2,82 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Running the App
+## Project Overview
+
+**War Alert Bot** — a geopolitical news monitoring system that fetches war-related news, classifies sentiment, translates to Thai, and sends alerts via LINE and Facebook to help users track events affecting gold/stock markets.
+
+## Commands
 
 ```bash
-# First run (creates venv and installs deps)
+# Start development server (creates venv, installs deps, starts on :8000)
 ./start.sh
 
-# App runs at http://localhost:8000
-```
+# Stop server
+./stop.sh
 
-Manual startup:
-```bash
-python3 -m venv venv && source venv/bin/activate
+# Run manually
+cd backend && python main.py
+
+# Install dependencies manually
 pip install -r backend/requirements.txt
-cd backend && python3 main.py
 ```
 
-## Environment Setup
-
-Copy `env.example` to `.env` in the project root. Required variables:
-- `NEWSAPI_KEY` — from newsapi.org (free tier)
-- `LINE_CHANNEL_ACCESS_TOKEN` — from LINE Developers console
-- `LINE_USER_ID` — target LINE user ID for push messages
-- `PORT` — defaults to 8000
+No test suite is currently configured.
 
 ## Architecture
 
-**Backend** (`backend/`) — FastAPI app (`main.py`) running on uvicorn with APScheduler for periodic news fetching. SQLite (`war_alert.db`) via SQLAlchemy.
+**Stack:** FastAPI + SQLite (SQLAlchemy 2.0) + APScheduler + HTTPX. Static HTML/JS frontend. Deployed on Railway.app.
 
-**Frontend** (`frontend/`) — Single-page admin dashboard served as static files by FastAPI. Vanilla JS (`app.js`) + Tailwind CSS (CDN) + custom CSS (`style.css`). No build step.
+**Data flow:**
+1. `news_fetcher.py` — fetches articles from NewsAPI.org by keyword
+2. `analyzer.py` — keyword-based classification into `danger` / `peace` / `neutral`; builds bilingual alert messages
+3. `translator.py` — translates English headlines to Thai via unofficial Google Translate (no auth required)
+4. `line_notifier.py` / `facebook_notifier.py` — sends formatted alerts to LINE Messaging API and Facebook Graph API
+5. `models.py` — SQLAlchemy ORM for `news_items` and `settings` tables; tracks what was already sent to avoid duplicates
+6. `main.py` — FastAPI app with all API endpoints, lifespan setup (DB init, default settings, scheduler start)
 
-### Data Flow
+**Frontend:** `frontend/index.html` is a single-file admin dashboard (no build step) served as a static file by FastAPI.
 
-1. `news_fetcher.py` — fetches from NewsAPI.org using comma-separated keyword list (max 5 sent as OR query)
-2. `analyzer.py` — pure keyword matching (no AI) categorizes articles as `danger`, `peace`, or `neutral`
-3. `translator.py` — translates English titles to Thai via unofficial Google Translate endpoint (free, may break)
-4. `line_notifier.py` — pushes formatted alerts to LINE via LINE Messaging API (push to single user or broadcast)
-5. `main.py` — deduplicates by URL before storing; only sends LINE alerts for `danger` and `peace` categories
+**Scheduler:** APScheduler runs periodic fetch jobs based on the `fetch_interval` setting stored in the database. Controlled by `auto_fetch` setting toggle.
 
-### Key Models (`models.py`)
+## Key Design Decisions
 
-- `NewsItem` — stores fetched articles with category, Thai title, alert message, and `line_sent` flag
-- `Setting` — key/value store for runtime config (auto-fetch toggle, interval, keywords, etc.)
+- **No AI API:** Classification is pure keyword matching (removed Anthropic API to eliminate cost). Keywords are configurable via admin UI and stored in the `settings` table.
+- **No hot reload** in production (`reload=False`); restart the server after backend changes.
+- **Auto-migration:** On startup, code safely adds missing columns (`title_th`, `facebook_sent`) via raw SQL — does not use Alembic.
+- **Thai timezone:** Published times are offset +7 hours from UTC before display.
+- **CORS:** Wildcard (`*`) — expected since the frontend is served from the same origin.
 
-### API Endpoints
+## Environment Variables
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/api/status` | Scheduler state + aggregate counts |
-| GET | `/api/news` | List news (filterable by category) |
-| POST | `/api/news/fetch` | Manual fetch with optional datetime range |
-| DELETE | `/api/news/{id}` | Delete single item |
-| DELETE | `/api/news` | Delete all |
-| GET/PUT | `/api/settings` | Read/write all settings |
-| PUT | `/api/settings/scheduler` | Toggle auto-fetch + interval |
-| PUT | `/api/settings/keywords` | Update keyword lists |
-| POST | `/api/line/test` | Send test LINE message |
-| POST | `/api/line/send/{id}` | Manually send LINE for a specific article |
+Copy `env.example` to `.env` in the project root:
+
+```
+NEWSAPI_KEY=           # NewsAPI.org key
+LINE_CHANNEL_ACCESS_TOKEN=
+LINE_USER_ID=          # Starts with "U"
+FB_PAGE_ID=
+FB_PAGE_ACCESS_TOKEN=
+ADMIN_SECRET=          # Admin panel password
+PORT=8000
+```
+
+## API Surface
+
+All endpoints are under `/api/`. Key ones:
+
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /api/news/fetch` | Manual fetch (optional `from_date`/`to_date`) |
+| `PUT /api/settings/scheduler` | Set interval + auto/manual mode |
+| `PUT /api/settings/keywords` | Update search keywords |
+| `PUT /api/settings/channels` | Toggle LINE/Facebook on/off |
+| `POST /api/line/test` | Send test LINE message |
+| `POST /api/facebook/test` | Send test Facebook post |
 
 ## Deployment
 
-Configured for Railway via `railway.json` and `nixpacks.toml`. Build runs `pip install -r backend/requirements.txt`; start command is `cd backend && python main.py`. Set all env vars in Railway dashboard.
+- Platform: Railway.app
+- Build: `nixpacks.toml` (reads `backend/requirements.txt`)
+- Start command: `cd backend && python main.py`
+- Restart policy: ON_FAILURE, max 10 retries
