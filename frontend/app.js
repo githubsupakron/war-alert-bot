@@ -249,7 +249,7 @@ async function manualFetch() {
 
   // Poll the feed every 1.5 s while the fetch is running so completed
   // articles appear in the list as soon as they are committed to the DB.
-  const livePoller = setInterval(loadNews, 1500);
+  const livePoller = setInterval(loadNews, 5000);
 
   let body = {};
   if (_activeRangeDays) {
