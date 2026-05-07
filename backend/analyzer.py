@@ -179,19 +179,21 @@ def build_alert_message(
     title_main = title_th if has_translation else title_en
     title_sub  = f"\n   🔤 {title_en}" if has_translation else ""
 
-    summary_th   = analysis.get("summary_th", "")
-    market_impact = analysis.get("market_impact", "")
-    gold_impact  = analysis.get("gold_impact", "")
-    stock_impact = analysis.get("stock_impact", "")
-    usd_impact   = analysis.get("usd_impact", "")
-    asia_impact  = analysis.get("asia_impact", "")
+    summary_th            = analysis.get("summary_th", "")
+    market_impact         = analysis.get("market_impact", "")
+    gold_impact           = analysis.get("gold_impact", "")
+    stock_impact          = analysis.get("stock_impact", "")
+    usd_impact            = analysis.get("usd_impact", "")
+    asia_impact           = analysis.get("asia_impact", "")
+    crypto_currency_impact = analysis.get("crypto_currency_impact", "")
 
     summary_block = f"\n🧠 สรุปข่าว:\n  • {summary_th}\n" if summary_th else ""
 
     if category == "danger":
-        gold_line  = gold_impact  or "📈 อาจพุ่งสูง (safe haven)"
-        stock_line = stock_impact or "📉 อาจร่วงแรง (risk-off)"
-        usd_line   = usd_impact   or "อาจแข็งค่า (flight to safety)"
+        gold_line   = gold_impact            or "📈 อาจพุ่งสูง (safe haven)"
+        stock_line  = stock_impact           or "📉 อาจร่วงแรง (risk-off)"
+        usd_line    = usd_impact             or "อาจแข็งค่า (flight to safety)"
+        crypto_line = crypto_currency_impact or "⚡ อาจผันผวนสูง"
         return (
             f"🚨 WAR ALERT - ระวัง!\n"
             f"━━━━━━━━━━━━━━━\n"
@@ -200,16 +202,18 @@ def build_alert_message(
             f"📊 ผลกระทบตลาดที่คาดการณ์:\n"
             f"  • ทองคำ: {gold_line}\n"
             f"  • หุ้น: {stock_line}\n"
-            f"  • 💵 USD: {usd_line}\n\n"
+            f"  • 💵 USD: {usd_line}\n"
+            f"  • ₿ คริปโต: {crypto_line}\n\n"
             f"💡 {market_impact}\n"
             f"━━━━━━━━━━━━━━━\n"
             f"🔗 {url}\n"
             f"🕐 {published_at}"
         )
     elif category == "peace":
-        gold_line  = gold_impact  or "📉 อาจลดลง (ลด safe haven demand)"
-        stock_line = stock_impact or "📈 อาจฟื้นตัว (risk-on)"
-        asia_line  = asia_impact  or "อาจบวก"
+        gold_line   = gold_impact            or "📉 อาจลดลง (ลด safe haven demand)"
+        stock_line  = stock_impact           or "📈 อาจฟื้นตัว (risk-on)"
+        asia_line   = asia_impact            or "อาจบวก"
+        crypto_line = crypto_currency_impact or "📈 อาจฟื้นตัว (risk-on)"
         return (
             f"☮️ PEACE NEWS - ข่าวดี!\n"
             f"━━━━━━━━━━━━━━━\n"
@@ -218,7 +222,8 @@ def build_alert_message(
             f"📊 ผลกระทบตลาดที่คาดการณ์:\n"
             f"  • ทองคำ: {gold_line}\n"
             f"  • หุ้น: {stock_line}\n"
-            f"  • 🌏 ตลาดเอเชีย: {asia_line}\n\n"
+            f"  • 🌏 ตลาดเอเชีย: {asia_line}\n"
+            f"  • ₿ คริปโต: {crypto_line}\n\n"
             f"💡 {market_impact}\n"
             f"━━━━━━━━━━━━━━━\n"
             f"🔗 {url}\n"

@@ -146,19 +146,24 @@ async def process_and_notify(
             else:
                 llm_fallback = True
                 final_result = {
-                    "category": "neutral",
-                    "confidence": 0.0,
-                    "reason": "CodeSmart AI classifier unavailable",
-                    "market_impact": "",
+                    "category":               "neutral",
+                    "confidence":             0.0,
+                    "reason":                 "CodeSmart AI classifier unavailable",
+                    "summary_th":             "",
+                    "market_impact":          "",
+                    "gold_impact":            "",
+                    "stock_impact":           "",
+                    "usd_impact":             "",
+                    "asia_impact":            "",
+                    "crypto_currency_impact": "",
                 }
         else:
             final_result = keyword_classify(article["title"], article["description"],
                                             danger_kw_csv, peace_kw_csv, negative_kw_csv)
 
-        category      = final_result.get("category", "neutral")
-        confidence    = final_result.get("confidence", 0.0)
-        reason        = final_result.get("reason", "")
-        market_impact = final_result.get("market_impact", "")
+        category   = final_result.get("category", "neutral")
+        confidence = final_result.get("confidence", 0.0)
+        reason     = final_result.get("reason", "")
 
         pub_dt   = parse_published_at(article["published_at"])
         thai_dt  = pub_dt + timedelta(hours=7)
@@ -196,7 +201,6 @@ async def process_and_notify(
                 news.line_sent = True
                 db.commit()
                 sent_line += 1
-
             if fb_on:
                 if await post_to_facebook_page(build_fb_message(alert_msg), article["url"]):
                     news.facebook_sent = True

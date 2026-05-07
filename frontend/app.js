@@ -244,8 +244,12 @@ async function manualFetch() {
   const wrap = document.getElementById('fetch-wrap');
 
   btn.disabled = true;
-  btn.innerHTML = '<div class="spin"></div> กำลังดึงข่าว + แปลภาษา...';
+  btn.innerHTML = '<div class="spin"></div> กำลังดึงข่าว + ประมวลผล...';
   wrap.classList.add('loading');
+
+  // Poll the feed every 1.5 s while the fetch is running so completed
+  // articles appear in the list as soon as they are committed to the DB.
+  const livePoller = setInterval(loadNews, 1500);
 
   let body = {};
   if (_activeRangeDays) {
@@ -268,12 +272,14 @@ async function manualFetch() {
     } else {
       toast(d.detail || 'เกิดข้อผิดพลาดในการดึงข่าว', 'err');
     }
-    await Promise.all([loadNews(), loadStatus()]);
   } catch(e) { toast('เกิดข้อผิดพลาด: ' + e.message, 'err'); }
-
-  btn.disabled = false;
-  btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> ค้นหาข่าวตอนนี้';
-  wrap.classList.remove('loading');
+  finally {
+    clearInterval(livePoller);
+    await Promise.all([loadNews(), loadStatus()]);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> ค้นหาข่าวตอนนี้';
+    wrap.classList.remove('loading');
+  }
 }
 
 // ── Test LINE ───────────────────────────────────────────────
@@ -400,8 +406,8 @@ function renderNews() {
     const transBadge = hasTH           ? '<span class="badge b-trans">🇹🇭 แปลแล้ว</span>'                                  : '';
 
     const previewBlock = n.alert_message ? `
-      <button class="preview-toggle" id="pbtn-${n.id}" onclick="togglePreview(${n.id})">📋 ดู LINE Preview ▼</button>
-      <div class="apreview" id="prev-${n.id}" style="display:none">${esc(n.alert_message)}</div>
+      <button class="preview-toggle" id="pbtn-${n.id}" onclick="togglePreview(${n.id})">📋 ซ่อน LINE Preview ▲</button>
+      <div class="apreview" id="prev-${n.id}">${esc(n.alert_message)}</div>
     ` : '';
 
     const sendBtn   = (!n.line_sent && n.alert_message)
