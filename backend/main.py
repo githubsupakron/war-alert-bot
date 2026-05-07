@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from pydantic import BaseModel
 import os
@@ -24,6 +24,7 @@ from translator import translate_to_thai
 
 scheduler = AsyncIOScheduler()
 last_fetch_time: Optional[datetime] = None
+THAI_TZ = timezone(timedelta(hours=7))
 
 
 # ─── Pydantic Models ──────────────────────────────────────────
@@ -77,6 +78,13 @@ def apply_scheduler(interval_value: int, interval_unit: str):
 def build_fb_message(alert_msg: str) -> str:
     """Append hashtags to the LINE-style alert message for Facebook."""
     return alert_msg + "\n\n#WarAlertBot #ทองคำ #หุ้น #ข่าวสงคราม #GoldAlert"
+
+def to_thai_iso(dt: Optional[datetime]) -> Optional[str]:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(THAI_TZ).isoformat()
 
 
 # ─── Core Process ─────────────────────────────────────────────
@@ -261,7 +269,7 @@ async def get_status(db: Session = Depends(get_db)):
         "auto_fetch":        get_setting(db, "auto_fetch") == "true",
         "interval_value":    int(get_setting(db, "fetch_interval_value", "30")),
         "interval_unit":     get_setting(db, "fetch_interval_unit", "minutes"),
-        "last_fetch":        last_fetch_time.isoformat() if last_fetch_time else None,
+        "last_fetch":        to_thai_iso(last_fetch_time),
         "total_news":        total,
         "sent_news":         line_sent,
         "fb_sent":           fb_sent,
@@ -301,12 +309,12 @@ async def get_news(
             "description":               n.description,
             "url":                       n.url,
             "source":                    n.source,
-            "published_at":              n.published_at.isoformat() if n.published_at else None,
+            "published_at":              to_thai_iso(n.published_at),
             "category":                  n.category,
             "alert_message":             n.alert_message,
             "line_sent":                 n.line_sent,
             "facebook_sent":             n.facebook_sent or False,
-            "created_at":                n.created_at.isoformat() if n.created_at else None,
+            "created_at":                to_thai_iso(n.created_at),
             "classification_confidence": n.classification_confidence or 0.0,
             "classification_reason":     n.classification_reason or "",
             "llm_used":                  n.llm_used or False,
