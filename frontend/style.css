@@ -274,7 +274,6 @@ body { margin: 0; padding: 0; background-color: var(--dark); color: #fff; font-f
 
 /* Page layout */
 .wrap   { max-width: 1440px; margin: 0 auto; padding: 0 16px; }
-.stats  { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin: 20px 0; }
 .mgrid  { display: grid; grid-template-columns: 330px 1fr; gap: 16px; margin-bottom: 40px; align-items: start; }
 @media (max-width: 900px) { .mgrid { grid-template-columns: 1fr; } }
 
@@ -294,6 +293,7 @@ body { margin: 0; padding: 0; background-color: var(--dark); color: #fff; font-f
   transition: all 0.15s;
 }
 .preset-chip:hover { border-color: var(--purple); color: #fff; background: rgba(114,65,155,0.15); }
+.preset-chip.active { border-color: var(--purple); color: #fff; background: rgba(114,65,155,0.35); box-shadow: 0 0 8px rgba(114,65,155,0.35); }
 
 /* Channel status bar */
 .ch-status {

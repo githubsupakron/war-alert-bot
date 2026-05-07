@@ -4,9 +4,9 @@ const PAGE_SIZE = 4;
 let _pollTimer = null;
 
 function syncPolling(autoFetch) {
-  if (autoFetch && !_pollTimer) {
-    _pollTimer = setInterval(() => { loadStatus(); loadNews(); }, 30000);
-  } else if (!autoFetch && _pollTimer) {
+  if (autoFetch) {
+    if (!_pollTimer) _pollTimer = setInterval(() => { loadStatus(); loadNews(); }, 30000);
+  } else {
     clearInterval(_pollTimer);
     _pollTimer = null;
   }
@@ -35,45 +35,30 @@ function toast(msg, type = 'ok') {
 function unitShort(u) { return {seconds:'s',minutes:'m',hours:'h',days:'d'}[u] || 'm'; }
 function unitTH(u)    { return {seconds:'วินาที',minutes:'นาที',hours:'ชั่วโมง',days:'วัน'}[u] || 'นาที'; }
 
+function toMinutes(val, unit) {
+  const m = {seconds: 1/60, minutes: 1, hours: 60, days: 1440};
+  return Math.round(val * (m[unit] || 1));
+}
+function snapToFive(m) {
+  return Math.max(5, Math.min(60, Math.round(m / 5) * 5));
+}
+
 function updateIvHint() {
-  const v = document.getElementById('iv-value').value;
-  const u = document.getElementById('iv-unit').value;
-  document.getElementById('iv-hint').innerHTML = `<i class="fa-solid fa-equals" style="margin-right:3px"></i> = ทุก ${v} ${unitTH(u)}`;
+  const v = document.getElementById('iv-minutes')?.value || 30;
+  document.getElementById('iv-hint').innerHTML = `<i class="fa-solid fa-equals" style="margin-right:3px"></i> = ทุก ${v} นาที`;
 }
 
-// ── Date Range ─────────────────────────────────────────────
-function toggleDateRange() {
-  const on = document.getElementById('use-daterange').checked;
-  const panel = document.getElementById('daterange-panel');
-  panel.style.display = on ? 'block' : 'none';
-  if (on) {
-    const now = new Date();
-    const ago = new Date(now - 7 * 86400000);
-    const toLocal = d => new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-    document.getElementById('from-dt').value = toLocal(ago);
-    document.getElementById('to-dt').value = toLocal(now);
+// ── Quick date-range chips ──────────────────────────────────
+let _activeRangeDays = null;
+function setQuickRange(days, el) {
+  if (_activeRangeDays === days) {
+    _activeRangeDays = null;
+    document.querySelectorAll('#range-chips .preset-chip').forEach(c => c.classList.remove('active'));
+    return;
   }
-}
-
-// ── Date Presets ────────────────────────────────────────────
-function setPreset(preset) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  let from = new Date(today), to = new Date(today);
-  if (preset === 'yesterday') {
-    from.setDate(from.getDate() - 1);
-    to.setDate(to.getDate() - 1);
-  } else if (preset === '7d') {
-    from.setDate(from.getDate() - 6);
-  } else if (preset === '30d') {
-    from.setDate(from.getDate() - 29);
-  }
-  to.setHours(23, 59, 0, 0);
-  const toLocalDT = d => new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-  document.getElementById('from-dt').value = toLocalDT(from);
-  document.getElementById('to-dt').value   = toLocalDT(to);
-  document.getElementById('use-daterange').checked = true;
-  document.getElementById('daterange-panel').style.display = 'block';
+  _activeRangeDays = days;
+  document.querySelectorAll('#range-chips .preset-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
 }
 
 // ── Channel Bar ─────────────────────────────────────────────
@@ -138,11 +123,9 @@ async function loadStatus() {
     if (document.activeElement.id !== 'toggle-auto') {
       document.getElementById('toggle-auto').checked = d.auto_fetch;
     }
-    if (document.activeElement.id !== 'iv-value') {
-      document.getElementById('iv-value').value = d.interval_value || 30;
-    }
-    if (document.activeElement.id !== 'iv-unit') {
-      document.getElementById('iv-unit').value = d.interval_unit || 'minutes';
+    if (document.activeElement.id !== 'iv-minutes') {
+      const mins = toMinutes(d.interval_value || 30, d.interval_unit || 'minutes');
+      document.getElementById('iv-minutes').value = String(snapToFive(mins));
     }
     updateIvHint();
 
@@ -152,14 +135,9 @@ async function loadStatus() {
     document.getElementById('auto-badge-txt').textContent =
       `AUTO / ${d.interval_value}${unitShort(d.interval_unit)}`;
 
-    document.getElementById('s-mode').textContent = d.auto_fetch
-      ? `Auto ทุก ${d.interval_value} ${unitTH(d.interval_unit)}`
-      : 'Manual mode';
-
     if (d.last_fetch) {
       const dt = new Date(d.last_fetch + (d.last_fetch.endsWith('Z') ? '' : 'Z'));
       const timeStr = dt.toLocaleString('th-TH', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-      document.getElementById('s-lastfetch').textContent = timeStr;
       document.getElementById('hdr-last-time').textContent = timeStr;
       document.getElementById('last-badge').style.display = 'flex';
       document.getElementById('last-fetch-txt').textContent =
@@ -194,9 +172,7 @@ async function loadSettings() {
 // ── Save Scheduler ──────────────────────────────────────────
 async function saveScheduler() {
   const auto = document.getElementById('toggle-auto').checked;
-  const val  = parseInt(document.getElementById('iv-value').value);
-  const unit = document.getElementById('iv-unit').value;
-  if (!val || val < 1) { toast('Interval ต้องมากกว่า 0', 'err'); return; }
+  const val  = parseInt(document.getElementById('iv-minutes').value) || 30;
 
   const btn = event.currentTarget;
   btn.disabled = true;
@@ -206,10 +182,20 @@ async function saveScheduler() {
     const r = await fetch(`${API}/api/settings/scheduler`, {
       method: 'PUT',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({auto_fetch: auto, interval_value: val, interval_unit: unit}),
+      body: JSON.stringify({auto_fetch: auto, interval_value: val, interval_unit: 'minutes'}),
     });
     if (r.ok) {
-      toast(auto ? `เปิด Auto ทุก ${val} ${unitTH(unit)} ✅` : 'ปิด Auto Fetch แล้ว ✅');
+      toast(auto ? `เปิด Auto ทุก ${val} นาที ✅` : 'ปิด Auto Fetch แล้ว ✅');
+      if (auto) {
+        const now = new Date();
+        const from = new Date(now.getTime() - val * 60000);
+        const toISO = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString();
+        fetch(`${API}/api/news/fetch`, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ from_datetime: toISO(from), to_datetime: toISO(now) }),
+        }).then(() => Promise.all([loadNews(), loadStatus()]));
+      }
     } else {
       toast('บันทึกไม่สำเร็จ — ' + r.status, 'err');
     }
@@ -261,24 +247,13 @@ async function manualFetch() {
   btn.innerHTML = '<div class="spin"></div> กำลังดึงข่าว + แปลภาษา...';
   wrap.classList.add('loading');
 
-  const useRange = document.getElementById('use-daterange').checked;
   let body = {};
-
-  if (useRange) {
-    const f = document.getElementById('from-dt').value;
-    const t = document.getElementById('to-dt').value;
-    if (!f || !t) {
-      toast('กรุณาระบุวันเริ่มต้นและสิ้นสุด', 'err');
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> ค้นหาข่าวตอนนี้';
-      wrap.classList.remove('loading');
-      return;
-    }
-    const toLocalISO = s => new Date(new Date(s).getTime() - new Date(s).getTimezoneOffset() * 60000).toISOString();
-    body = {
-      from_datetime: toLocalISO(f),
-      to_datetime:   toLocalISO(t),
-    };
+  if (_activeRangeDays) {
+    const now = new Date();
+    const from = new Date(now.getTime() - _activeRangeDays * 86400000);
+    from.setHours(0, 0, 0, 0);
+    const toISO = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString();
+    body = { from_datetime: toISO(from), to_datetime: toISO(now) };
   }
 
   try {
@@ -539,7 +514,10 @@ async function deleteAll() {
 }
 
 // ── Init ────────────────────────────────────────────────────
-document.getElementById('iv-value').addEventListener('input',  updateIvHint);
-document.getElementById('iv-unit').addEventListener('change',  updateIvHint);
+document.getElementById('iv-minutes').addEventListener('change', updateIvHint);
+
+// Default to 1-day range
+_activeRangeDays = 1;
+document.querySelector('#range-chips .preset-chip').classList.add('active');
 
 Promise.all([loadStatus().then(syncPolling), loadSettings(), loadNews()]);

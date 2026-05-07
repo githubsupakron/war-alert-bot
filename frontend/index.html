@@ -54,170 +54,52 @@
 
 <div class="wrap" style="padding-top:4px;">
 
-<!-- ── Stats Row ─────────────────────────────────────────────── -->
-<div class="stats">
-
-  <div class="glass-panel" style="border-radius:14px;padding:16px 20px;position:relative;overflow:hidden;">
-    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--purple),transparent)"></div>
-    <div class="slabel" style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;font-family:'Share Tech Mono',monospace;margin-bottom:6px;">
-      <i class="fa-solid fa-newspaper" style="margin-right:4px;color:var(--purple)"></i> ข่าวทั้งหมด
-    </div>
-    <div style="font-size:30px;font-weight:700;color:#c4b5fd;font-family:'Share Tech Mono',monospace;line-height:1;" id="s-total">—</div>
-    <div style="font-size:11px;color:var(--dim);margin-top:5px;">รายการ</div>
-  </div>
-
-  <div class="glass-panel" style="border-radius:14px;padding:16px 20px;position:relative;overflow:hidden;">
-    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),transparent)"></div>
-    <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;font-family:'Share Tech Mono',monospace;margin-bottom:6px;">
-      <i class="fa-solid fa-triangle-exclamation" style="margin-right:4px;color:var(--red)"></i> Danger
-    </div>
-    <div style="font-size:30px;font-weight:700;color:var(--red);font-family:'Share Tech Mono',monospace;line-height:1;" id="s-danger">—</div>
-    <div style="font-size:11px;color:var(--dim);margin-top:5px;">ข่าวอันตราย</div>
-  </div>
-
-  <div class="glass-panel" style="border-radius:14px;padding:16px 20px;position:relative;overflow:hidden;">
-    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--green),transparent)"></div>
-    <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;font-family:'Share Tech Mono',monospace;margin-bottom:6px;">
-      <i class="fa-solid fa-dove" style="margin-right:4px;color:var(--green)"></i> Peace
-    </div>
-    <div style="font-size:30px;font-weight:700;color:var(--green);font-family:'Share Tech Mono',monospace;line-height:1;" id="s-peace">—</div>
-    <div style="font-size:11px;color:var(--dim);margin-top:5px;">ข่าวสันติ</div>
-  </div>
-
-  <div class="glass-panel" style="border-radius:14px;padding:16px 20px;position:relative;overflow:hidden;background:rgba(34,197,94,0.15);">
-    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#22c55e,transparent)"></div>
-    <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;font-family:'Share Tech Mono',monospace;margin-bottom:6px;">
-      <i class="fa-brands fa-line" style="margin-right:4px;color:#22c55e"></i> ส่ง LINE แล้ว
-    </div>
-    <div style="font-size:30px;font-weight:700;color:#22c55e;font-family:'Share Tech Mono',monospace;line-height:1;" id="s-sent">—</div>
-    <div style="font-size:11px;color:var(--dim);margin-top:5px;">แจ้งเตือน</div>
-  </div>
-
-  <div class="glass-panel" style="border-radius:14px;padding:16px 20px;position:relative;overflow:hidden;">
-    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#1877f2,transparent)"></div>
-    <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;font-family:'Share Tech Mono',monospace;margin-bottom:6px;">
-      <i class="fa-brands fa-facebook" style="margin-right:4px;color:#1877f2"></i> Facebook โพสต์
-    </div>
-    <div style="font-size:30px;font-weight:700;color:#1877f2;font-family:'Share Tech Mono',monospace;line-height:1;" id="s-fbsent">—</div>
-    <div style="font-size:11px;color:var(--dim);margin-top:5px;">โพสต์แล้ว</div>
-  </div>
-
-  <div class="glass-panel" style="border-radius:14px;padding:16px 20px;position:relative;overflow:hidden;">
-    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--yellow),transparent)"></div>
-    <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;font-family:'Share Tech Mono',monospace;margin-bottom:6px;">
-      <i class="fa-solid fa-clock" style="margin-right:4px;color:var(--yellow)"></i> อัปเดตล่าสุด
-    </div>
-    <div style="font-size:15px;font-weight:700;color:var(--yellow);font-family:'Share Tech Mono',monospace;line-height:1;padding-top:5px;" id="s-lastfetch">—</div>
-    <div style="font-size:11px;color:var(--dim);margin-top:5px;" id="s-mode">Manual mode</div>
-  </div>
-
-</div>
-
 <!-- ── Main Grid ───────────────────────────────────────────────── -->
 <div class="mgrid">
 
 <!-- LEFT: Control Panel -->
 <div style="display:flex;flex-direction:column;gap:14px;">
 
-  <!-- Manual Search -->
+  <!-- Search & Automation -->
   <div class="glass-panel" style="border-radius:16px;overflow:hidden;">
-    <div class="panel-hdr" style="padding:12px 16px;border-bottom:1px solid rgba(114,65,155,0.2);display:flex;align-items:center;gap:8px;" onclick="togglePanel(this)">
+    <div class="panel-hdr open" style="padding:12px 16px;border-bottom:1px solid rgba(114,65,155,0.2);display:flex;align-items:center;gap:8px;" onclick="togglePanel(this)">
       <i class="fa-solid fa-magnifying-glass" style="color:var(--purple)"></i>
-      <span style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">Manual Search</span>
-      <i class="fa-solid fa-chevron-right panel-chevron"></i>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">Search & Automation</span>
+      <i class="fa-solid fa-chevron-right panel-chevron" style="transform:rotate(90deg)"></i>
     </div>
-    <div class="panel-body" style="display:none;padding:16px;">
-      <div class="trow" style="padding-top:0;">
-        <div>
-          <div class="tlabel">ระบุช่วงวันที่</div>
-          <div class="tdesc">เปิดเพื่อเลือกวันจากปฏิทิน</div>
+    <div class="panel-body" style="padding:16px;">
+
+      <!-- Manual Search subsection label -->
+      <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1.5px;font-family:'Share Tech Mono',monospace;margin-bottom:10px;">Manual Search</div>
+
+      <!-- Quick date-range chips -->
+      <div style="margin-top:4px;margin-bottom:10px;">
+        <div class="fl" style="margin-bottom:6px;"><i class="fa-solid fa-clock-rotate-left" style="margin-right:3px;color:var(--purple)"></i> ช่วงเวลาด่วน</div>
+        <div class="presets" id="range-chips">
+          <button class="preset-chip" onclick="setQuickRange(1,this)">1 วัน</button>
+          <button class="preset-chip" onclick="setQuickRange(3,this)">3 วัน</button>
+          <button class="preset-chip" onclick="setQuickRange(7,this)">7 วัน</button>
+          <button class="preset-chip" onclick="setQuickRange(14,this)">14 วัน</button>
+          <button class="preset-chip" onclick="setQuickRange(21,this)">21 วัน</button>
+          <button class="preset-chip" onclick="setQuickRange(30,this)">30 วัน</button>
         </div>
-        <label class="toggle">
-          <input type="checkbox" id="use-daterange" onchange="toggleDateRange()">
-          <span class="tslider"></span>
-        </label>
       </div>
 
-      <!-- Date Range (hidden by default) -->
-      <div class="drpanel" id="daterange-panel">
-        <div class="presets">
-          <button class="preset-chip" onclick="setPreset('today')">วันนี้</button>
-          <button class="preset-chip" onclick="setPreset('yesterday')">เมื่อวาน</button>
-          <button class="preset-chip" onclick="setPreset('7d')">7 วัน</button>
-          <button class="preset-chip" onclick="setPreset('30d')">30 วัน</button>
-        </div>
-        <div class="fg">
-          <label class="fl"><i class="fa-solid fa-calendar-days" style="margin-right:3px;color:var(--purple)"></i> วันเริ่มต้น</label>
-          <input type="datetime-local" class="fi" id="from-dt">
-        </div>
-        <div class="fg">
-          <label class="fl"><i class="fa-solid fa-calendar-check" style="margin-right:3px;color:var(--purple)"></i> วันสิ้นสุด</label>
-          <input type="datetime-local" class="fi" id="to-dt">
-        </div>
-        <div class="hint"><i class="fa-solid fa-circle-exclamation" style="margin-right:3px;color:var(--yellow)"></i> NewsAPI free: ย้อนหลังได้ไม่เกิน 30 วัน</div>
-      </div>
-
-      <div style="height:12px;"></div>
+      <div style="height:10px;"></div>
       <div class="fetch-wrap" id="fetch-wrap">
         <button class="btn btn-primary btn-full" id="btn-fetch" onclick="manualFetch()">
           <i class="fa-solid fa-magnifying-glass"></i> ค้นหาข่าวตอนนี้
         </button>
       </div>
       <div class="hint" id="last-fetch-txt" style="margin-top:8px;text-align:center;">ยังไม่เคยดึงข่าว</div>
-    </div>
-  </div>
-
-  <!-- Alert Channels -->
-  <div class="glass-panel" style="border-radius:16px;overflow:hidden;">
-    <div class="panel-hdr" style="padding:12px 16px;border-bottom:1px solid rgba(114,65,155,0.2);display:flex;align-items:center;gap:8px;" onclick="togglePanel(this)">
-      <i class="fa-solid fa-satellite-dish" style="color:var(--purple)"></i>
-      <span style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">Alert Channels</span>
-      <i class="fa-solid fa-chevron-right panel-chevron"></i>
-    </div>
-    <div class="panel-body" style="display:none;padding:16px;">
-
-      <div class="trow" style="padding-top:0">
-        <div>
-          <div class="tlabel">📱 LINE Alert</div>
-          <div class="tdesc">ส่งแจ้งเตือนผ่าน LINE Messaging API</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="toggle-line" checked>
-          <span class="tslider"></span>
-        </label>
-      </div>
-
-      <div class="trow">
-        <div>
-          <div class="tlabel">📘 Facebook Alert</div>
-          <div class="tdesc">โพสต์ไปยัง Facebook Page อัตโนมัติ</div>
-        </div>
-        <label class="toggle toggle-fb">
-          <input type="checkbox" id="toggle-fb">
-          <span class="tslider"></span>
-        </label>
-      </div>
 
       <div class="divider"></div>
 
-      <button class="btn btn-green btn-full" onclick="saveChannels()">
-        💾 บันทึก Channel Settings
-      </button>
-      <div style="display:flex;gap:6px;margin-top:6px">
-        <button class="btn btn-ghost btn-half btn-sm" onclick="testLine()">📱 Test LINE</button>
-        <button class="btn btn-fb btn-half btn-sm" onclick="testFacebook()">📘 Test FB</button>
+      <!-- Auto Fetch subsection label -->
+      <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1.5px;font-family:'Share Tech Mono',monospace;margin-bottom:10px;">
+        <i class="fa-solid fa-robot" style="margin-right:4px;color:var(--purple)"></i> Auto Fetch
       </div>
-    </div>
-  </div>
 
-  <!-- Auto Fetch -->
-  <div class="glass-panel" style="border-radius:16px;overflow:hidden;">
-    <div class="panel-hdr" style="padding:12px 16px;border-bottom:1px solid rgba(114,65,155,0.2);display:flex;align-items:center;gap:8px;" onclick="togglePanel(this)">
-      <i class="fa-solid fa-robot" style="color:var(--purple)"></i>
-      <span style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">Auto Fetch</span>
-      <i class="fa-solid fa-chevron-right panel-chevron"></i>
-    </div>
-    <div class="panel-body" style="display:none;padding:16px;">
       <div class="trow" style="padding-top:0;">
         <div>
           <div class="tlabel">เปิดใช้งาน Auto</div>
@@ -231,55 +113,75 @@
 
       <div style="margin-top:12px;">
         <label class="fl"><i class="fa-solid fa-rotate" style="margin-right:3px;color:var(--purple)"></i> ดึงข่าวทุกๆ</label>
-        <div class="iv-row">
-          <input type="number" class="fi iv-num" id="iv-value" min="1" value="30">
-          <select class="fsel" id="iv-unit">
-            <option value="seconds">วินาที</option>
-            <option value="minutes" selected>นาที</option>
-            <option value="hours">ชั่วโมง</option>
-            <option value="days">วัน</option>
-          </select>
-        </div>
+        <select class="fsel" id="iv-minutes" onchange="updateIvHint()">
+          <option value="5">5 นาที</option>
+          <option value="10">10 นาที</option>
+          <option value="15">15 นาที</option>
+          <option value="20">20 นาที</option>
+          <option value="25">25 นาที</option>
+          <option value="30" selected>30 นาที</option>
+          <option value="35">35 นาที</option>
+          <option value="40">40 นาที</option>
+          <option value="45">45 นาที</option>
+          <option value="50">50 นาที</option>
+          <option value="55">55 นาที</option>
+          <option value="60">60 นาที (1 ชั่วโมง)</option>
+        </select>
         <div class="hint" id="iv-hint"><i class="fa-solid fa-equals" style="margin-right:3px"></i> = ทุก 30 นาที</div>
       </div>
 
-      <div class="divider"></div>
-
+      <div style="height:12px;"></div>
       <button class="btn btn-success btn-full" onclick="saveScheduler()">
         <i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่า Auto
       </button>
     </div>
   </div>
 
-  <!-- Alert Channels -->
+  <!-- Distribution Channels -->
   <div class="glass-panel" style="border-radius:16px;overflow:hidden;">
     <div class="panel-hdr" style="padding:12px 16px;border-bottom:1px solid rgba(114,65,155,0.2);display:flex;align-items:center;gap:8px;" onclick="togglePanel(this)">
-      <i class="fa-solid fa-bullhorn" style="color:var(--purple)"></i>
-      <span style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">Alert Channels</span>
+      <i class="fa-solid fa-share-nodes" style="color:var(--purple)"></i>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">Distribution Channels</span>
       <i class="fa-solid fa-chevron-right panel-chevron"></i>
     </div>
     <div class="panel-body" style="display:none;padding:16px;">
+
+      <!-- LINE -->
       <div class="trow" style="padding-top:0;">
-        <div>
-          <div class="tlabel"><i class="fa-brands fa-line" style="color:var(--green);margin-right:5px;"></i> LINE Alert</div>
-          <div class="tdesc">ส่งแจ้งเตือนผ่าน LINE Messaging API</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(0,195,0,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-brands fa-line" style="color:#00c300;font-size:18px;"></i>
+          </div>
+          <div>
+            <div class="tlabel">LINE Alert</div>
+            <div class="tdesc">Messaging API</div>
+          </div>
         </div>
         <label class="toggle">
           <input type="checkbox" id="toggle-line" checked>
           <span class="tslider"></span>
         </label>
       </div>
+
+      <!-- Facebook -->
       <div class="trow">
-        <div>
-          <div class="tlabel"><i class="fa-brands fa-facebook" style="color:#1877f2;margin-right:5px;"></i> Facebook Alert</div>
-          <div class="tdesc">โพสต์ไปยัง Facebook Page อัตโนมัติ</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(24,119,242,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-brands fa-facebook" style="color:#1877f2;font-size:18px;"></i>
+          </div>
+          <div>
+            <div class="tlabel">Facebook Alert</div>
+            <div class="tdesc">Auto Post to Page</div>
+          </div>
         </div>
         <label class="toggle">
           <input type="checkbox" id="toggle-fb">
           <span class="tslider"></span>
         </label>
       </div>
+
       <div class="divider"></div>
+
       <button class="btn btn-success btn-full" onclick="saveChannels()">
         <i class="fa-solid fa-floppy-disk"></i> บันทึก Channel Settings
       </button>
@@ -294,11 +196,11 @@
     </div>
   </div>
 
-  <!-- Keywords -->
+  <!-- AI Filters & Keywords -->
   <div class="glass-panel" style="border-radius:16px;overflow:hidden;">
     <div class="panel-hdr" style="padding:12px 16px;border-bottom:1px solid rgba(114,65,155,0.2);display:flex;align-items:center;gap:8px;" onclick="togglePanel(this)">
-      <i class="fa-solid fa-tags" style="color:var(--purple)"></i>
-      <span style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">Keywords</span>
+      <i class="fa-solid fa-brain" style="color:var(--purple)"></i>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">AI Filters & Keywords</span>
       <i class="fa-solid fa-chevron-right panel-chevron"></i>
     </div>
     <div class="panel-body" style="display:none;padding:16px;">
@@ -355,11 +257,46 @@
     </div>
   </div>
 
-  <!-- Channel active status bar -->
-  <div class="ch-status" id="ch-status-bar">
-    <span style="color:var(--dim)">Channels:</span>
-    <span class="ch-badge off" id="ch-line-badge">📱 LINE —</span>
-    <span class="ch-badge off" id="ch-fb-badge">📘 Facebook —</span>
+  <!-- Stats Cards -->
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:16px;border-bottom:1px solid rgba(114,65,155,0.2);">
+
+    <div style="background:#151822;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;min-height:90px;">
+      <span style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:600;display:flex;align-items:center;gap:5px;">
+        <i class="fa-solid fa-newspaper" style="color:#c4b5fd"></i> Total News
+      </span>
+      <div style="font-size:30px;font-weight:700;color:#f1f5f9;font-family:'Share Tech Mono',monospace;line-height:1;margin-top:8px;" id="s-total">—</div>
+    </div>
+
+    <div style="background:#151822;border:1px solid rgba(239,71,111,0.3);border-radius:12px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;min-height:90px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;right:0;width:64px;height:64px;background:rgba(239,71,111,0.05);border-bottom-left-radius:100%;"></div>
+      <span style="font-size:10px;color:#ef476f;text-transform:uppercase;letter-spacing:1px;font-weight:700;display:flex;align-items:center;gap:5px;">
+        <i class="fa-solid fa-triangle-exclamation"></i> Danger
+      </span>
+      <div style="font-size:30px;font-weight:700;color:#ef476f;font-family:'Share Tech Mono',monospace;line-height:1;margin-top:8px;" id="s-danger">—</div>
+    </div>
+
+    <div style="background:#151822;border:1px solid rgba(6,214,160,0.3);border-radius:12px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;min-height:90px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;right:0;width:64px;height:64px;background:rgba(6,214,160,0.05);border-bottom-left-radius:100%;"></div>
+      <span style="font-size:10px;color:#06d6a0;text-transform:uppercase;letter-spacing:1px;font-weight:700;display:flex;align-items:center;gap:5px;">
+        <i class="fa-solid fa-dove"></i> Peace
+      </span>
+      <div style="font-size:30px;font-weight:700;color:#06d6a0;font-family:'Share Tech Mono',monospace;line-height:1;margin-top:8px;" id="s-peace">—</div>
+    </div>
+
+    <div style="background:#151822;border:1px solid rgba(0,195,0,0.3);border-radius:12px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;min-height:90px;">
+      <span style="font-size:10px;color:#00c300;text-transform:uppercase;letter-spacing:1px;font-weight:700;display:flex;align-items:center;gap:5px;">
+        <i class="fa-brands fa-line"></i> LINE Sent
+      </span>
+      <div style="font-size:30px;font-weight:700;color:#f1f5f9;font-family:'Share Tech Mono',monospace;line-height:1;margin-top:8px;" id="s-sent">—</div>
+    </div>
+
+    <div style="background:#151822;border:1px solid rgba(24,119,242,0.3);border-radius:12px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;min-height:90px;">
+      <span style="font-size:10px;color:#1877f2;text-transform:uppercase;letter-spacing:1px;font-weight:700;display:flex;align-items:center;gap:5px;">
+        <i class="fa-brands fa-facebook"></i> FB Posted
+      </span>
+      <div style="font-size:30px;font-weight:700;color:#f1f5f9;font-family:'Share Tech Mono',monospace;line-height:1;margin-top:8px;" id="s-fbsent">—</div>
+    </div>
+
   </div>
 
   <div class="tabs">
@@ -370,6 +307,8 @@
     <button class="tab" onclick="setTab('sent',this)"><i class="fa-brands fa-line"></i> LINE ส่ง</button>
     <button class="tab" onclick="setTab('fb_sent',this)"><i class="fa-brands fa-facebook"></i> FB โพสต์</button>
   </div>
+
+  <!-- Channel active status bar -->
   <div class="ch-status" id="ch-status-bar">
     <span style="color:var(--dim)">Channels:</span>
     <span class="ch-badge off" id="ch-line-badge"><i class="fa-brands fa-line"></i> LINE —</span>
