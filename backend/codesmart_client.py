@@ -190,7 +190,7 @@ async def classify_with_codesmart(article: dict) -> dict | None:
     )
 
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with httpx.AsyncClient(timeout=60) as client:
             resp = await client.post(
                 api_url,
                 json=payload,
@@ -351,7 +351,7 @@ async def _legacy_classify_batch_with_codesmart(articles: list[dict]) -> dict[st
     )
 
     try:
-        async with httpx.AsyncClient(timeout=30) as client:
+        async with httpx.AsyncClient(timeout=60) as client:
             resp = await client.post(
                 api_url,
                 json=payload,
